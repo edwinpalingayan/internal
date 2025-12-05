@@ -1,0 +1,28 @@
+@use '../assets/styles/abstracts/variables' as *;
+@use '../assets/styles/base/typography' as *;
+
+.custom_textarea {
+  .MuiOutlinedInput-root {
+    font-family: $font-primary !important;
+    color: $color-primary-dark-gray !important;
+    border-radius: 0;
+    &.Mui-focused fieldset {
+      border-color: $color-primary-blue !important;
+    }
+  }
+
+  &_title {
+    font-size: 15px;
+    font-weight: 500;
+    text-align: left;
+    margin-bottom: 14px;
+  }
+}
+
+.full_width {
+  width: 100% !important;
+  margin-right: 0 !important;
+}
+
+@media (max-width: 390px) {
+}

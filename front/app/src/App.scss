@@ -1,0 +1,80 @@
+@use './assets/styles/abstracts/_variables.scss' as *;
+@use './assets/styles/base/_typography.scss' as *;
+
+#root {
+  // max-width: 1920px;
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+  text-align: center;
+  font-family: $font-primary;
+  color: $color-primary-dark-gray;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: $color-bg-blue-gray;
+}
+
+// Main logo style
+.mainLogo {
+  display: block;
+  margin: 0 auto 1.5rem;
+  width: 278px;
+  height: auto;
+}
+
+a {
+  color: $color-primary-blue !important;
+  text-decoration: none !important;
+  &:hover {
+    text-decoration: underline !important;
+    text-decoration-color: $color-primary-blue !important;
+  }
+}
+
+.adminHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  flex-direction: column;
+  &Container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    background-color: #ffffff;
+  }
+  &Logo {
+    height: auto;
+    width: 278px;
+    margin: 0.5rem 0 0.5rem 1rem;
+  }
+}
+
+.titleContainer {
+  padding: 12px 0 12px 28px;
+  background-color: #eaeef4;
+  width: 100%;
+  text-align: left;
+  & p {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+  }
+}
+
+@media (min-width: $breakpoint-tablet) {
+  #root {
+    padding: 8rem 1rem 2rem;
+    // align-items: flex-start;
+  }
+}
+
+@media (min-width: $breakpoint-mobile) {
+  #root {
+    padding: 3rem 0 2rem;
+  }
+}

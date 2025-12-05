@@ -1,0 +1,24 @@
+services:
+  app:
+    image          : node:24-bullseye-slim
+    platform       : linux/amd64
+    container_name : react
+    working_dir    : /app
+    command        : >
+      bash -c "
+      rm -rf package-lock.json node_modules &&
+      npm install &&
+      npm run dev
+      "
+    volumes:
+      - ./app:/app
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=PC
+      - ROLLUP_FORCE_WASM=1
+    networks:
+      - net
+networks:
+  net:
+    external: true
