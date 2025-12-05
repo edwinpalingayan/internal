@@ -251,24 +251,22 @@ const EventDetailPage: React.FC = () => {
     },
   ];
 
-  // GMSDB連携ボタン処理 (HARDCODED payload per request)
+  // GMSDB連携ボタン処理
   const handleGmsdbLink = async () => {
     if (!eventYoyakuMoshikomi?.data) return;
 
-    // keep previous check: ensure no empty GMS IDs exist (optional)
-    // const hasEmptyGmsId = eventYoyakuMoshikomi.data.some((row) => !row.GMS_KOKYAKU_ID);
-    // if (hasEmptyGmsId) {
-    //   setValidation((prev) => ({ ...prev, hasEmptyGmsId: true }));
-    //   return;
-    // }
+    // Separate base URL and endpoint as requested
+    const baseUrl = 'https://mnt-vc.globis.ac.jp';
+    const apiEndpoint = '/api/ext/v1/updateKamokuReserveStatus';
+    const url = `${baseUrl}${apiEndpoint}`;
 
-    const url = 'https://mnt-vc.globis.ac.jp/api/ext/v1/updateKamokuReserveStatus';
     const headers = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=UTF-8',
+      Accept: 'application/json',
       authorizationkey: 'GLOBIS_REST_HANDLER',
     };
 
-    // Hard-coded params requested
+    // Hard-coded params
     const payload = {
       gmsKokyakuId: '1100417626',
       eventCd: 'E-0000017213',
