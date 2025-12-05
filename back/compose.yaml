@@ -1,0 +1,14 @@
+services:
+  app:
+    image          : node:22.14-bullseye-slim
+    container_name : node
+    command        : yarn nodemon --exec "ts-node-dev --loader ts-node/esm --poll src/index.ts"
+    working_dir    : /app
+    volumes:
+      - ./app:/app
+      - ./app/src/.env:/app/.env
+    ports:
+      - "3000:3000"
+    environment:
+      - ENV=OTH
+      - LOG=debug

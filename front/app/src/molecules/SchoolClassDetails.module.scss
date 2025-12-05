@@ -1,0 +1,71 @@
+@use 'sass:color';
+@use '@/assets/styles/abstracts/variables' as *;
+@use '@/assets/styles/base/typography' as *;
+
+.subject_title {
+  font-family: $font-primary;
+  font-size: 17px;
+  font-weight: 700;
+  color: $color-primary-dark-gray;
+  margin-top: 32px;
+  margin-bottom: 16px;
+  text-align: left;
+  &_error {
+    margin-top: 0;
+  }
+}
+
+.table {
+  font-family: $font-primary !important;
+  color: $color-primary-dark-gray !important;
+  &-link {
+    :global(.MuiLink-root) {
+      font-family: $font-primary !important;
+      font-size: 13px;
+      font-weight: 400;
+      color: $color-primary-blue !important;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+.subject_category_head {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: $color-primary-blue;
+  &_date,
+  &_availability,
+  &_duration {
+    font-family: $font-heading;
+  }
+  &_date {
+    font-size: 22px;
+  }
+  &_availability {
+    display: flex;
+    font-size: 14px;
+  }
+  &_duration,
+  &_yobi {
+    font-size: 16px;
+  }
+  &_divider {
+    position: relative;
+    display: block;
+    &::before {
+      position: absolute;
+      content: '';
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 1rem;
+      background: $color-bg-medium-gray;
+    }
+  }
+}

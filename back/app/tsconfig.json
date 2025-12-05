@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_version": "22.0.0",
+  "compilerOptions": {
+    "lib"             : ["es2023"],
+    "module"          : "nodenext",            // 生成するJavaScriptのモジュール形式
+    "target"          : "ES2022",              // 生成するJavaScriptのECMAScriptのバージョン
+    "rootDir"         : "./src",               // TypeScriptファイルのルートディレクトリ
+    "outDir"          : "./dist",              // コンパイル後のJavaScriptファイルの出力先
+    "strict"          : true,                  // 厳格に型をチェックする
+    "esModuleInterop" : true,                  // CommonJSモジュールをES Module形式でインポートする
+    "skipLibCheck"    : true,                  // 型定義ファイル（.d.ts）のチェックをスキップする
+    "forceConsistentCasingInFileNames" : true  // ファイル名の大文字・小文字を区別する
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

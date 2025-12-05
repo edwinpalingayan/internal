@@ -1,0 +1,13 @@
+docker compose run --rm -it app bash -c 'yarn create vite ./ --template react-swc-ts && yarn install'
+
+docker compose up -d
+
+### BUILD
+docker build -t react .
+
+### Run React(image)
+docker run --rm -d --net=net -p "80:80" --name react react
+バックエンドと同じネットワークに所属させること
+#### 例
+バックエンドがai_report_scorer_defaultのネットワークにある場合.
+docker run --rm -d --net=ai_report_scorer_default -p "80:80" --name react react

@@ -1,0 +1,70 @@
+@use '../assets/styles/abstracts/variables' as *;
+@use '../assets/styles/base/typography' as *;
+
+.selection_label_checked {
+  color: $color-primary-blue;
+}
+
+.selection_checked,
+.selection_checkbox_checked {
+  // チェックされたラジオ入力のルートに適用されます
+  color: $color-primary-blue !important;
+}
+
+.selection_checkbox_checked {
+  position: absolute !important;
+  transform: translateX(-50%);
+  left: 0.938rem;
+}
+
+.custom_selection_group {
+  display: flex;
+  font-family: $font-primary !important;
+  color: $color-primary-dark-gray !important;
+  flex-direction: row;
+  font-size: 15px;
+  gap: 1rem;
+  border: 1px solid $color-bg-medium-gray !important;
+  border-radius: 4px;
+  height: 36px;
+
+  &:has(.selection_checked) {
+    border-color: $color-primary-blue !important;
+  }
+
+  &:has(.selection_checkbox_checked) {
+    border-color: $color-primary-blue !important;
+    gap: 0 !important;
+    position: relative !important;
+  }
+}
+
+.full_width {
+  width: 100% !important;
+  margin-right: 0 !important;
+}
+
+@media ((min-width: 390px) and (max-width: 932px)) {
+  .custom_selection_group {
+    height: 53px !important;
+    .MuiFormControlLabel-root,
+    .full_width {
+      width: 100% !important;
+      margin-right: 0 !important;
+    }
+  }
+  .custom_selection_radio_group {
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
+}
+
+.check_icon_wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check_icon_hidden {
+  display: none !important;
+}

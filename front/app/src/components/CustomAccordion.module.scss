@@ -1,0 +1,26 @@
+@use '../assets/styles/abstracts/variables' as *;
+@use '../assets/styles/base/typography' as *;
+
+.container {
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-family: $font-primary !important;
+  font-size: 1rem;
+  font-weight: 500;
+  color: $color-primary-dark-gray !important;
+  text-align: left;
+  margin-bottom: 0.875rem;
+}
+
+.full_width {
+  width: 100% !important;
+  margin-right: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .title {
+    margin-bottom: 0;
+  }
+}
