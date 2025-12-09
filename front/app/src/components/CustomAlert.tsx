@@ -50,7 +50,8 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({ notificationLists, sx 
                         ? '#FFF6EB' // TODO: Globalize colors
                         : err.severity === 'info'
                           ? theme.palette.info.light
-                          : theme.palette.success.light,
+                          // : theme.palette.success.light,
+                          : '#E9F6EB', // TODO: Globalize colors
                   ...sx,
                 }}
               >

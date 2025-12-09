@@ -2,6 +2,7 @@ export interface EventTtEvent {
   EVENT_ID: string;
   EVENT_MEI: string;
   EVENT_KBN: string;
+  EVENT_KBN_MEI: string;
   KAISAI_KO_CD: string;
   EVENT_START_TIME: string; // ISO date string
   EVENT_END_TIME: string; // ISO date string
@@ -13,8 +14,9 @@ export interface EventTtEvent {
   KOSHIN_ID: string;
   APP_KOSHIN_BI: string; // ISO date string
   APP_KOSHIN_ID: string;
-  EVENT_KBN_MEI: string; //イベント区分
   KAISAI_KO_MEI: string; //開催校
+  YOYAKU_KIGEN: string; // ISO timestamp
+  QUALTRICS_URL: string;
 }
 
 export interface GetEventTtEventResponse {
