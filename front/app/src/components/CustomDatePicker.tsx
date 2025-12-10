@@ -10,11 +10,10 @@ import 'dayjs/locale/ja';
 
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ja } from 'date-fns/locale/ja';
-// Import Day type
+
 import type { Day } from 'date-fns';
 import { colors } from '@mui/material';
 
-// Correctly type weekStartsOn as Day
 const customJa = {
   ...ja,
   options: { ...ja.options, weekStartsOn: 1 as Day }, // 0: Sunday, 1: Monday, etc.
@@ -23,6 +22,7 @@ const customJa = {
 dayjs.locale('ja');
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Tokyo');
 
 export type CustomDatePickerProps = {
   width?: string | number;

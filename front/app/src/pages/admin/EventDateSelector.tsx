@@ -289,10 +289,16 @@ export default function EventDateSelector() {
     setSelectedDate(newValue);
   };
 
-  const handleDetailClick = (event: EventTtEvent) => {
+   const handleDetailClick = (event: EventTtEvent) => {
     navigate(`${URL_PREFIX}/web/event/${event.EVENT_ID}`, {
       state: {
-        event: event,
+        eventId: event.EVENT_ID,
+        eventName: event.EVENT_MEI,
+        reservationDeadline: event.YOYAKU_KIGEN,
+        qualtricsUrl: event.QUALTRICS_URL,
+        url: event.URL,
+        locationName: event.KAISAI_KO_MEI,
+        eventTypeName: event.EVENT_KBN_MEI,
       },
     });
   };

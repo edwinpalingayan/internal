@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 
 import { URL_PREFIX } from '@/utils/config';
 
@@ -14,11 +15,25 @@ import EventDateSelector from '@/pages/admin/EventDateSelector';
 import EventDetailPage from '@/pages/web/event/[EventDetailPage]';
 
 function App() {
+  const location = useLocation();
+  const [pageTitle, setPageTitle] = useState(() =>
+    window.location.pathname.includes('/web/event/') ? 'イベント詳細' : 'イベント一覧',
+  );
+
+  useEffect(() => {
+    const path = location.pathname;
+    const title = path.includes('/web/event/') ? 'イベント詳細' : 'イベント一覧';
+    setPageTitle(title);
+    document.title = `${title} - Globis University JP`;
+  }, [location.pathname]);
+
+  const showAdminHeader = ['/eventlist', '/web/event/'].some((path) =>
+    location.pathname.includes(path),
+  );
+
   return (
     <div style={{ overflowX: 'hidden' }}>
-      {['/eventlist', '/web/event/:eventId'].some((path) =>
-        window.location.pathname.includes(path.replace(':eventId', '')),
-      ) ? (
+      {showAdminHeader ? (
         <div className="adminHeader">
           <div className="adminHeaderContainer">
             <img
@@ -28,7 +43,7 @@ function App() {
             />
           </div>
           <div className="titleContainer">
-            <p className="mainTitle">イベント一覧</p>
+            <p className="mainTitle">{pageTitle}</p>
           </div>
         </div>
       ) : (

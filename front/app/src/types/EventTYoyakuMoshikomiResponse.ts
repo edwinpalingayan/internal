@@ -4,11 +4,11 @@ export interface YoyakuMoshikomiData {
   EMAIL: string;
   SHIMEI: string;
   CLASS_CD: string;
+  CLASS_HYOJI: string;
   PRIORITY: number;
   WAITING_FLG: string;
   GMS_KOKYAKU_ID: string | null;
   MOSHIKOMI_NO: string;
-  CLASS_HYOJI: string;
   MOSHIKOMI_GYO: number;
   RENKEI_ZUMI_FLG: string;
 }
