@@ -30,7 +30,7 @@ import QRCode from 'react-qr-code';
 
 import MainContainer from '@/layouts/MainLayout/MainLayout';
 
-import { post, get } from '@/services/apiService';
+import { post } from '@/services/apiService';
 
 import type { ColumnConfig } from '@/components/SchoolClassDetailsTable';
 import type { EventTtEvent, GetEventTtEventResponse } from '@/types/EventTtEventResponse';
@@ -53,6 +53,7 @@ dayjs.locale('ja');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(customParseFormat);
+dayjs.tz.setDefault('Asia/Tokyo');
 
 const parseToDayjs = (value: unknown): Dayjs | null => {
   if (value == null) return null;
@@ -204,10 +205,9 @@ const EventDetailPage: React.FC = () => {
   // 未連携者フィルタ state (default: enabled/checked)
   const [filterUnlinked, setFilterUnlinked] = React.useState(true);
 
-  // Try to seed from compact location.state (sent by EventDateSelector).
-  // This gives instant UI while we fetch authoritative data.
   const locState = React.useMemo(() => (location.state ?? {}) as Record<string, unknown>, [location.state]);
-  const seededEvent: EventTtEvent | undefined = React.useMemo(() => {
+
+  const [seededEvent, setSeededEvent] = React.useState<EventTtEvent | undefined>(() => {
     if (locState && (locState.eventId || locState.eventId === 0)) {
       return {
         EVENT_ID: String(locState.eventId),
@@ -220,6 +220,20 @@ const EventDetailPage: React.FC = () => {
       } as unknown as EventTtEvent;
     }
     return undefined;
+  });
+
+  React.useEffect(() => {
+    if (locState && (locState.eventId || locState.eventId === 0)) {
+      setSeededEvent({
+        EVENT_ID: String(locState.eventId),
+        EVENT_MEI: (locState.eventName as string) ?? '',
+        YOYAKU_KIGEN: (locState.reservationDeadline as string) ?? '',
+        QUALTRICS_URL: (locState.qualtricsUrl as string) ?? '',
+        URL: (locState.url as string) ?? '',
+        KAISAI_KO_MEI: (locState.locationName as string) ?? '',
+        EVENT_KBN_MEI: (locState.eventTypeName as string) ?? '',
+      } as unknown as EventTtEvent);
+    }
   }, [locState]);
 
   const [eventDetail, setEventDetail] = React.useState<EventTtEvent | undefined>(() => seededEvent);
@@ -241,6 +255,7 @@ const EventDetailPage: React.FC = () => {
     yoyakuMoshikomiUpdateCompleted: false,
     rowDataIsEmpty: false,
     patchTtEventUpdated: false,
+    patchTtEventFailed: false,
   });
 
   const notificationLists: NotificationLists[] = [
@@ -253,7 +268,7 @@ const EventDetailPage: React.FC = () => {
     {
       key: 'patchTtReservationApplicationUpdateFailed',
       active: validation.patchTtReservationApplicationUpdateFailed,
-      message: 'patch_tt_yoyaku_moshikomiの更新に失敗しました',
+      message: '申込情報の一時保存に失敗しました',
       severity: 'error' as const,
     },
     {
@@ -286,6 +301,12 @@ const EventDetailPage: React.FC = () => {
       message: 'イベント情報を更新しました。',
       severity: 'success' as const,
     },
+    {
+      key: 'patchTtEventFailed',
+      active: validation.patchTtEventFailed,
+      message: 'イベント情報の更新に失敗しました。',
+      severity: 'error' as const,
+    },
   ];
 
   const [gmsValues, setGmsValues] = React.useState<Record<string, string>>({});
@@ -310,11 +331,11 @@ const EventDetailPage: React.FC = () => {
     setGmsValues(map);
   }, [eventYoyakuMoshikomi]);
 
-  // NEW: normalizer to map alternate field names to YOYAKU_KIGEN if server uses different key
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizeEventShape = (ev: any): EventTtEvent => {
     if (!ev) return ev;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const e = { ...ev } as any;
-    // if server uses different field names, map them here:
     const altCandidates = [
       'YOYAKU_KIGEN',
       'reservationDeadline',
@@ -335,53 +356,47 @@ const EventDetailPage: React.FC = () => {
     return e as EventTtEvent;
   }
 
-  // Fetch helper: try single-event POST (common), fallback to list
+  const inflightEventFetches = React.useMemo(() => new Map<string, Promise<EventTtEvent | undefined>>(), []);
+
   const fetchEventById = React.useCallback(async (id?: string) => {
     if (!id) return undefined;
-    try {
-      try {
-        const res = await post<GetEventTtEventResponse>('/api/ocrs_f/get_event_tt_event', { event_id: id });
-        // DEBUG: log full response shape to help diagnose missing fields
-        console.log('get_event_tt_event response:', res);
-        if (res) {
-          if (res.data) {
-            if (Array.isArray(res.data)) {
-              const found = res.data.find((ev: EventTtEvent) => String(ev.EVENT_ID) === String(id));
-              if (found) return normalizeEventShape(found);
-            } else {
-              return normalizeEventShape(res.data);
-            }
-          }
-          if ((res as any).EVENT_ID) return normalizeEventShape(res);
-        }
-      } catch (err) {
-        // ignore and try list fallback
-        console.warn('single-event POST failed, falling back to list', err);
-      }
 
-      // fallback: list
-      try {
-        const list = await get<GetEventTtEventResponse>('/api/ocrs_f/get_event_tt_event_list');
-        console.log('get_event_tt_event_list response:', list);
-        if (list?.data && Array.isArray(list.data)) {
-          const found = list.data.find((ev: EventTtEvent) => String(ev.EVENT_ID) === String(id));
-          if (found) return normalizeEventShape(found);
-        } else if (Array.isArray(list)) {
-          const found2 = (list as EventTtEvent[]).find((ev) => String(ev.EVENT_ID) === String(id));
-          if (found2) return normalizeEventShape(found2);
-        }
-      } catch (err) {
-        // give up
-        console.warn('event list fetch failed', err);
-      }
-    } catch (err) {
-      console.error('fetchEventById unexpected error', err);
+    if (inflightEventFetches.has(id)) {
+      return inflightEventFetches.get(id);
     }
-    return undefined;
-  }, []);
 
-  // ALWAYS fetch authoritative event data on mount (or when eventId changes).
-  // This guarantees fresh qualtricsUrl / yoyakuKigen after a full reload.
+    const promise = (async () => {
+      try {
+        try {
+          const res = await post<GetEventTtEventResponse>('/api/ocrs_f/get_event_tt_event', { event_id: id });
+          if (res) {
+            if (res.data) {
+              if (Array.isArray(res.data)) {
+                const found = res.data.find((ev: EventTtEvent) => String(ev.EVENT_ID) === String(id));
+                if (found) return normalizeEventShape(found);
+              } else {
+                return normalizeEventShape(res.data);
+              }
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((res as any).EVENT_ID) return normalizeEventShape(res);
+          }
+        } catch (err) {
+          console.warn('single-event POST failed, falling back to list', err);
+        }
+      } catch (err) {
+        console.error('fetchEventById unexpected error', err);
+      }
+      return undefined;
+    })();
+
+    inflightEventFetches.set(id, promise);
+
+    promise.finally(() => inflightEventFetches.delete(id));
+
+    return promise;
+  }, [inflightEventFetches]);
+
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -393,13 +408,12 @@ const EventDetailPage: React.FC = () => {
       const fetched = await fetchEventById(String(eventId));
       if (cancelled) return;
       if (fetched) {
-        // DEBUG: inspect what we actually received
+        // TODO: 後で削除する。デバッグ: 実際に受信した内容を確認
         console.log('fetched event (normalized):', fetched);
         setEventDetail(fetched);
       } else {
-        // keep seeded eventDetail (if any) for optimistic UI
         if (!eventDetail) {
-          console.warn('Event not found for id', eventId);
+            console.warn('イベントが見つかりませんでした。ID:', eventId);
         }
       }
       setLoading(false);
@@ -408,14 +422,10 @@ const EventDetailPage: React.FC = () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId]); // intentionally only depend on eventId
+  }, [eventId]);
 
-  // When authoritative eventDetail changes, update editable inputs but do not clobber user edits.
   React.useEffect(() => {
     if (!eventDetail) return;
-
-    // debug logging — remove in production
-    console.log('Fetched eventDetail.YOYAKU_KIGEN:', eventDetail.YOYAKU_KIGEN);
 
     const serverQual = eventDetail.QUALTRICS_URL ?? '';
     if (serverQual !== qualtricsUrl) {
@@ -423,15 +433,12 @@ const EventDetailPage: React.FC = () => {
     }
 
     const parsed = parseToDayjs(eventDetail.YOYAKU_KIGEN);
-    console.log('Parsed YOYAKU_KIGEN ->', parsed ? parsed.format() : parsed);
 
     if (parsed) {
-      // If the editable state is null or not the same day, update it.
       if (!yoyakuKigen || !parsed.isSame(yoyakuKigen, 'day')) {
         setYoyakuKigen(parsed);
       }
     } else {
-      // server has no date: clear only if there is no meaningful seeded value
       if (!seededEvent) {
         setYoyakuKigen(null);
       }
@@ -439,7 +446,7 @@ const EventDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventDetail]);
 
-  // Fetch reservation rows (initial)
+
   const hasFetchedReservations = React.useRef(false);
   React.useEffect(() => {
     if (hasFetchedReservations.current) return;
@@ -460,16 +467,53 @@ const EventDetailPage: React.FC = () => {
     fetchData();
   }, [eventId]);
 
-  // Salesforce link (unchanged)
+  // Salesforce link
   const handleSalesforceLink = async () => {
-    try {
-      await post('https://dev-ocrs.intranet.globis.ac.jp/web/event/' + eventId);
-    } catch (err) {
-      console.error('salesforce link failed', err);
-    }
+  const baseUrl = 'https://dev-ocrs.globis.ac.jp';
+  const apiEndpoint = '/api/ocrs_f/post_kamoku_reserve_status';
+  const url = `${baseUrl}${apiEndpoint}`;
+
+  const token = 'QXBwX0E1OSw0NDdiNzM1ZGI4NDlhNjZmNzA4YmFlZjg3MDkzNGU0ZTQ0MjQzMzZkMjE1NTU1N2M4M2JiMmQ3YjRlNmEwMTI0';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
   };
 
-  // GMSDB integration (unchanged)
+  const payload = {
+    gmsKokyakuId: '1100417626',
+    eventCd: 'E-0000017213',
+    syosekiSoufusakiYubinNo: '101-0001',
+    syosekiSoufusakiJusyo: '東京都千代田区XXXXXXXX',
+    syosekiSoufusakiTelNo: '090-1111-2222',
+    yoyakuMoshikomiKbn: '02',
+    yoyakuKijitsu: '2025-10-10',
+  };
+
+  try {
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => null);
+      console.error('post_kamoku_reserve_status non-ok response', res.status, text);
+      throw new Error(`Request failed: ${res.status}`);
+    }
+
+    const data = await res.json().catch(async () => {
+      const txt = await res.text();
+      return txt;
+    });
+
+    console.log('post_kamoku_reserve_status response (parsed):', data);
+    return data;
+  } catch (err) {
+    console.error('salesforce link failed', err);
+    throw err;
+  }
+};
+
+  // GMSDB integration
   const handleGmsdbLink = async () => {
     if (!eventYoyakuMoshikomi?.data) return;
     const baseUrl = 'https://mnt-vc.globis.ac.jp';
@@ -480,7 +524,7 @@ const EventDetailPage: React.FC = () => {
       Accept: 'application/json',
       authorizationkey: 'GLOBIS_REST_HANDLER',
     };
-    const payload = {
+    const GMSDBPayload = {
       gmsKokyakuId: '1100417626',
       eventCd: 'E-0000017213',
       syosekiSoufusakiYubinNo: '101-0001',
@@ -490,7 +534,7 @@ const EventDetailPage: React.FC = () => {
       yoyakuKijitsu: '2025-10-10',
     };
     try {
-      const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+      const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(GMSDBPayload) });
       if (!resp.ok) {
         setValidation((prev) => ({ ...prev, schoolDbIntegrationFailed: true }));
         return;
@@ -511,23 +555,29 @@ const EventDetailPage: React.FC = () => {
   ) => {
     const payload = { event_id, yoyaku_kigen, qualtrics_url, koshin_id };
     try {
-      console.debug('patch_tt_event payload:', payload);
       const resp = await post('/api/ocrs_f/patch_tt_event', payload);
 
-      // log server response (inspect for warnings/errors even when status=200)
-      console.debug('patch_tt_event response:', resp);
-
       setValidation((prev) => ({ ...prev, patchTtEventUpdated: true }));
-
       return resp;
     } catch (error) {
       console.error('patch_tt_event failed:', error);
+      setValidation((prev) => ({ ...prev, patchTtEventFailed: true }));
       throw error;
     }
   };
 
-  // Temporary save: patch event-level fields then patch rows
   const handleTemporarySave = async () => {
+    setValidation({
+      hasEmptyGmsId: false,
+      patchTtReservationApplicationUpdateFailed: false,
+      gmsdbIntegrationCompleted: false,
+      schoolDbIntegrationFailed: false,
+      yoyakuMoshikomiUpdateCompleted: false,
+      rowDataIsEmpty: false,
+      patchTtEventUpdated: false,
+      patchTtEventFailed: false,
+    });
+
     if (!eventYoyakuMoshikomi?.data) {
     // データがない場合は処理しない
       setValidation((prev) => ({ ...prev, rowDataIsEmpty: true }));
@@ -539,32 +589,26 @@ const EventDetailPage: React.FC = () => {
       const targetEventId =
         eventId || (eventYoyakuMoshikomi.data.length > 0 ? String(eventYoyakuMoshikomi.data[0].EVENT_ID) : '');
 
-      // Build the ISO string we want to persist / show optimistically
-      const newYoyakuIso = yoyakuKigen ? yoyakuKigen.toISOString() : undefined;
+      // 修正: タイムゾーンのシフトを回避
+      const newYoyakuIso = yoyakuKigen ? yoyakuKigen.format('YYYY-MM-DD') : undefined;
 
-      // 1) Send patch
       await patchTtEvent(targetEventId, newYoyakuIso, qualtricsUrl ?? undefined, appPrefix);
 
-      // 2) Optimistic update: reflect the patched value in UI immediately
       setEventDetail((prev) =>
         prev
           ? {
               ...prev,
               QUALTRICS_URL: qualtricsUrl ?? prev.QUALTRICS_URL,
-              // Use the exact ISO string we sent to the server so UI reflects the same value
               YOYAKU_KIGEN: newYoyakuIso ?? prev.YOYAKU_KIGEN,
             }
           : prev,
       );
 
-      // 3) After optimistic update, try to re-fetch authoritative event detail.
       const refreshed = await fetchEventById(targetEventId);
       if (refreshed) {
-        // If server returns something (whether updated or not), prefer server authoritative record
         setEventDetail(refreshed);
       }
 
-      // patch reservation rows (existing behavior)
       await Promise.all(
         eventYoyakuMoshikomi.data.map((row) => {
           const idStr = String(row.ID);
