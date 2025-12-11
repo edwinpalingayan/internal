@@ -313,22 +313,48 @@ const EventDetailPage: React.FC = () => {
 
   const [priorityValues, setPriorityValues] = React.useState<Record<number, string>>({});
 
+  const initialPriorityRef = React.useRef<Record<number, number>>({});
+  const initialWaitingRef = React.useRef<Record<number, boolean>>({});
+
   React.useEffect(() => {
     if (!eventYoyakuMoshikomi?.data) return;
-    const map: Record<number, string> = {};
-    eventYoyakuMoshikomi.data.forEach((r) => {
-      map[r.ID] = String(r.PRIORITY);
+    setPriorityValues((prev) => {
+      const map: Record<number, string> = { ...prev };
+      eventYoyakuMoshikomi.data.forEach((r) => {
+        if (map[r.ID] === undefined) {
+          map[r.ID] = String(r.PRIORITY);
+        }
+      });
+      return map;
     });
-    setPriorityValues(map);
   }, [eventYoyakuMoshikomi]);
 
   React.useEffect(() => {
     if (!eventYoyakuMoshikomi?.data) return;
-    const map: Record<string, string> = {};
-    eventYoyakuMoshikomi.data.forEach((r) => {
-      map[String(r.ID)] = r.GMS_KOKYAKU_ID ?? '';
+    if (Object.keys(initialPriorityRef.current).length === 0) {
+      const p: Record<number, number> = {};
+      const w: Record<number, boolean> = {};
+      eventYoyakuMoshikomi.data.forEach((r) => {
+        p[r.ID] = Number(r.PRIORITY ?? 0);
+        w[r.ID] = String(r.WAITING_FLG) === '1';
+      });
+      initialPriorityRef.current = p;
+      initialWaitingRef.current = w;
+    }
+  }, [eventYoyakuMoshikomi]);
+
+  React.useEffect(() => {
+    if (!eventYoyakuMoshikomi?.data) return;
+    setGmsValues((prev) => {
+      const next: Record<string, string> = { ...prev };
+      eventYoyakuMoshikomi.data.forEach((r) => {
+        const id = String(r.ID);
+        if (next[id] === undefined) {
+          next[id] = r.GMS_KOKYAKU_ID ?? '';
+        }
+      });
+      return next;
     });
-    setGmsValues(map);
   }, [eventYoyakuMoshikomi]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -608,7 +634,7 @@ const EventDetailPage: React.FC = () => {
       if (refreshed) setEventDetail(refreshed);
 
       const requests = eventYoyakuMoshikomi.data.map((row) => {
-
+        // 可能な限り ID は変更しない
         const idStr = String(row.ID ?? '');
         const eventIdStr = String(row.EVENT_ID ?? '');
         const classCdStr = String(row.CLASS_CD ?? '');
@@ -624,13 +650,13 @@ const EventDetailPage: React.FC = () => {
 
         // バックエンドの制限に対して長さを検証してから送信する。
         const errs: string[] = [];
-        if (idStr.length === 0) errs.push(`IDが空です: ${JSON.stringify(row)}`);
-        if (idStr.length !== 10) errs.push(`IDは10文字である必要があります (${idStr.length}文字): ${idStr}`);
-        if (eventIdStr.length !== 12) errs.push(`event_idは12文字である必要があります (${eventIdStr.length}文字): ${eventIdStr}`);
-        if (classCdStr.length !== 10) errs.push(`class_cdは10文字である必要があります (${classCdStr.length}文字): ${classCdStr}`);
-        if (priorityStr.length !== 10) errs.push(`priorityは10文字である必要があります (${priorityStr.length}文字): ${priorityStr}`);
-        if (trimmedGms.length !== 10) errs.push(`gms_kokyaku_idは10文字である必要があります (${trimmedGms.length}文字): ${trimmedGms}`);
-        if (koshinId.length !== 30) errs.push(`koshin_idは30文字である必要があります (${koshinId.length}文字)`);
+        if (idStr.length === 0) errs.push(`IDが空です:  ${JSON.stringify(row)}`);
+        if (idStr.length > 10) errs.push(`ID桁数が上限(10桁)を超えています (${idStr.length} > 10): ${idStr}`);
+        if (eventIdStr.length > 12) errs.push(`event_id桁数が上限(12桁)を超えています (${eventIdStr.length} > 12): ${eventIdStr}`);
+        if (classCdStr.length > 10) errs.push(`class_cd桁数が上限(10桁)を超えています (${classCdStr.length} > 10): ${classCdStr}`);
+        if (priorityStr.length > 10) errs.push(`priority桁数が上限(10桁)を超えています (${priorityStr.length} > 10): ${priorityStr}`);
+        if (trimmedGms.length > 10) errs.push(`gms_kokyaku_id桁数が上限(10桁)を超えています (${trimmedGms.length} > 10): ${trimmedGms}`);
+        if (koshinId.length > 30) errs.push(`koshin_id桁数が上限(30桁)を超えています (${koshinId.length} > 30)`);
 
         if (errs.length > 0) {
           return Promise.reject(new Error(`Validation failed for id=${idStr}: ${errs.join('; ')}`));
@@ -650,8 +676,10 @@ const EventDetailPage: React.FC = () => {
         return post('/api/ocrs_f/patch_tt_yoyaku_moshikomi', payload);
       });
 
+      // 実行して結果を検証
       const results = await Promise.allSettled(requests);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const failed: Array<{ index: number; reason: any }> = [];
       results.forEach((r, idx) => {
         if (r.status === 'rejected') {
@@ -667,6 +695,19 @@ const EventDetailPage: React.FC = () => {
         console.warn('Some updates failed:', failed);
       } else {
         setValidation((prev) => ({ ...prev, yoyakuMoshikomiUpdateCompleted: true }));
+
+        // サーバーのリストを更新して、UIに永続化された値を反映します。
+        try {
+          const refreshedRes = await post<GetEventTtYoyakuMoshikomiResponse>(
+            '/api/ocrs_f/get_event_tt_yoyaku_moshikomi',
+            { event_id: targetEventId },
+          );
+            // サーバーから取得した最新データで状態を更新
+          setEventYoyakuMoshikomi(refreshedRes);
+            // eventYoyakuMoshikomi から gmsValues マップを更新する useEffect
+        } catch (err) {
+          console.error('Failed to refresh reservation list after save', err);
+        }
       }
     } catch (err) {
       console.error('temporary save failed (outer):', err);
@@ -688,19 +729,54 @@ const EventDetailPage: React.FC = () => {
       render: (row: YoyakuMoshikomiData) => {
         const isUnlinked =
           row.RENKEI_ZUMI_FLG === '0' || Number(row.RENKEI_ZUMI_FLG) === 0 || row.RENKEI_ZUMI_FLG == null;
-        const current = priorityValues[row.ID] ?? String(row.PRIORITY);
+        const originalPriorityValue = priorityValues[row.ID] ?? String(row.PRIORITY);
 
         if (isUnlinked) {
           return (
             <TextField
               size="small"
               variant="outlined"
-              type="number"
-              value={current}
+              type="text"
+              value={originalPriorityValue}
               onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
-                setPriorityValues((prev) => ({ ...prev, [row.ID]: digits }));
-                console.log('priority onChange', row.ID, digits);
+                const realTimePriorityValue = e.target.value.replace(/\D/g, '').slice(0, 2);
+                setPriorityValues((prev) => ({ ...prev, [row.ID]: realTimePriorityValue }));
+                setEventYoyakuMoshikomi((prev) => {
+                  if (!prev || !Array.isArray(prev.data)) return prev;
+                  const classCd = row.CLASS_CD;
+                  const waitingPriorities = new Set<string>(
+                    prev.data
+                      .filter((r) => r.CLASS_CD === classCd && String(r.WAITING_FLG) === '1')
+                      .map((r) => String(r.PRIORITY)),
+                  );
+
+              const newData = prev.data.map((r) => {
+                if (r.ID === row.ID) {
+                  const origPriorityBaseline = initialPriorityRef.current[row.ID];
+                  const origPriorityStr = origPriorityBaseline !== undefined ? String(origPriorityBaseline) : String(row.PRIORITY);
+                  const origWaitingBaseline = initialWaitingRef.current[row.ID] ?? (String(row.WAITING_FLG) === '1');
+
+                  const newPriorityNum = realTimePriorityValue === '' ? r.PRIORITY : Number(realTimePriorityValue);
+                  const newPriorityStr = String(newPriorityNum);
+
+                  const newRow = { ...r, PRIORITY: newPriorityNum };
+
+                  if (realTimePriorityValue === '') {
+                    newRow.WAITING_FLG = '-';
+                  } else if (origWaitingBaseline && newPriorityStr === origPriorityStr) {
+                    newRow.WAITING_FLG = '1';
+                  } else if (waitingPriorities.has(newPriorityStr)) {
+                    newRow.WAITING_FLG = '1';
+                  } else {
+                    newRow.WAITING_FLG = '0';
+                  }
+                  return newRow;
+                }
+                return r;
+              });
+
+                  return { ...prev, data: newData };
+                });
               }}
               inputProps={{
                 style: { fontSize: '0.875rem' },
@@ -722,17 +798,18 @@ const EventDetailPage: React.FC = () => {
       render: (row: YoyakuMoshikomiData) => {
         const isUnlinked =
           row.RENKEI_ZUMI_FLG === '0' || Number(row.RENKEI_ZUMI_FLG) === 0 || row.RENKEI_ZUMI_FLG == null;
-        const current = gmsValues[String(row.ID)] ?? row.GMS_KOKYAKU_ID ?? '';
+        const originalGmsValues = gmsValues[String(row.ID)] ?? row.GMS_KOKYAKU_ID ?? '';
 
         if (isUnlinked) {
           return (
             <TextField
               size="small"
               variant="outlined"
-              value={current}
+              type="text"
+              value={originalGmsValues}
               onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                setGmsValues((prev) => ({ ...prev, [String(row.ID)]: digits }));
+                const realTimeGmsValues = e.target.value.replace(/\D/g, '').slice(0, 10);
+                setGmsValues((prev) => ({ ...prev, [String(row.ID)]: realTimeGmsValues }));
               }}
               inputProps={{
                 style: { fontSize: '0.875rem' },
