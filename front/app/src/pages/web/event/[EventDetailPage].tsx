@@ -19,7 +19,7 @@ import {
   TextField,
 } from '@mui/material';
 
-import LinkIcon from '@mui/icons-material/Link';
+import { Link as LinkIcon, ExpandLessRounded as ExpandLessRoundedIcon, } from '@mui/icons-material';
 
 import dayjs, { Dayjs } from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -45,6 +45,8 @@ import { API_APP_KEY } from '@/utils/config';
 import { CustomAlert, type NotificationLists } from '@/components/CustomAlert';
 
 import { CustomDatePicker } from '@/components/CustomDatePicker';
+
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 const appPrefix = API_APP_KEY;
 
@@ -98,6 +100,23 @@ const DateCell: React.FC<{ iso?: string | null }> = ({ iso }) =>
 const TimeCell: React.FC<{ iso?: string | null }> = ({ iso }) =>
   iso ? <>{dayjs(iso).format('HH:mm')}</> : <>-</>;
 
+
+const isValidUrlRegex = (value: string): boolean => {
+  const pattern = /^(https?:\/\/)[^\s/$.?#].[^\s]*$/i;
+  return pattern.test(value);
+};
+
+const containsHiragana = (value: string): boolean => {
+  const hiraganaRegex = /[\u3040-\u309F]/;
+  return hiraganaRegex.test(value);
+};
+
+const containsKatakana = (value: string): boolean => {
+  const katakanaRegex = /[\u30A0-\u30FF]/;
+  return katakanaRegex.test(value);
+};
+
+
 /* --- Generic DataTable --- */
 function DataTable<T extends object>({
   columns,
@@ -106,7 +125,7 @@ function DataTable<T extends object>({
   headSx,
   cellSx,
 }: {
-  columns: Array<ColumnConfig<T>>;
+  columns: Array<Omit<ColumnConfig<T>, 'label'> & { label: React.ReactNode }>;
   rows: T[];
   tableProps?: React.ComponentProps<typeof Table>;
   headSx?: object;
@@ -194,10 +213,10 @@ function DataTable<T extends object>({
  * - イベント情報を表示 (Grid/Chip)
  * - 申込数や申込者テーブルを表示
  */
-/* --- EventDetailPage (version 5, improved YOYAKU_KIGEN handling) --- */
 const EventDetailPage: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const location = useLocation();
+  const isMobile = useMediaQuery('(max-width:768px)');
   // APIレスポンス保持
   const [eventYoyakuMoshikomi, setEventYoyakuMoshikomi] =
     React.useState<GetEventTtYoyakuMoshikomiResponse | null>(null);
@@ -248,7 +267,7 @@ const EventDetailPage: React.FC = () => {
 
   // バリデーション / 通知
   const [validation, setValidation] = React.useState({
-    hasEmptyGmsId: false,
+    emptyGmsIdError: false,
     patchTtReservationApplicationUpdateFailed: false,
     gmsdbIntegrationCompleted: false,
     schoolDbIntegrationFailed: false,
@@ -256,12 +275,17 @@ const EventDetailPage: React.FC = () => {
     rowDataIsEmpty: false,
     patchTtEventUpdated: false,
     patchTtEventFailed: false,
+    patchTtEventQualtricsUrlInvalid: false,
+    waitingFlgInvalid: false,
+    sameClassCdAndPriorityDuplicate: false,
+    invalidPriorityValue: false,
+    priorityValueDosesNotExist: false,
   });
 
   const notificationLists: NotificationLists[] = [
     {
-      key: 'hasEmptyGmsId',
-      active: validation.hasEmptyGmsId,
+      key: 'emptyGmsIdError',
+      active: validation.emptyGmsIdError,
       message: 'GMS顧客IDが未入力のデータがあります',
       severity: 'error' as const,
     },
@@ -305,6 +329,36 @@ const EventDetailPage: React.FC = () => {
       key: 'patchTtEventFailed',
       active: validation.patchTtEventFailed,
       message: 'イベント情報の更新に失敗しました。',
+      severity: 'error' as const,
+    },
+    {
+      key: 'patchTtEventQualtricsUrlInvalid',
+      active: validation.patchTtEventQualtricsUrlInvalid,
+      message: 'アンケートURLの形式が正しくありません。',
+      severity: 'error' as const,
+    },
+    {
+      key: 'waitingFlgInvalid',
+      active: validation.waitingFlgInvalid,
+      message: 'WTGフラグに無効な値が含まれています。',
+      severity: 'error' as const,
+    },
+    {
+      key: 'sameClassCdAndPriorityDuplicate',
+      active: validation.sameClassCdAndPriorityDuplicate,
+      message: '同じクラスコードに対して重複する優先順位が存在します。',
+      severity: 'error' as const,
+    },
+    {
+      key: 'invalidPriorityValue',
+      active: validation.invalidPriorityValue,
+      message: '優先順位に無効な値が含まれています。',
+      severity: 'error' as const,
+    },
+    {
+      key: 'priorityValueDosesNotExist',
+      active: validation.priorityValueDosesNotExist,
+      message: '優先順位の値が同じクラスコード内で存在しません。',
       severity: 'error' as const,
     },
   ];
@@ -434,8 +488,6 @@ const EventDetailPage: React.FC = () => {
       const fetched = await fetchEventById(String(eventId));
       if (cancelled) return;
       if (fetched) {
-        // TODO: 後で削除する。デバッグ: 実際に受信した内容を確認
-        console.log('fetched event (normalized):', fetched);
         setEventDetail(fetched);
       } else {
         if (!eventDetail) {
@@ -541,34 +593,43 @@ const EventDetailPage: React.FC = () => {
 
   // GMSDB integration
   const handleGmsdbLink = async () => {
-    if (!eventYoyakuMoshikomi?.data) return;
-    const baseUrl = 'https://mnt-vc.globis.ac.jp';
-    const apiEndpoint = '/api/ext/v1/updateKamokuReserveStatus';
-    const url = `${baseUrl}${apiEndpoint}`;
-    const headers = {
-      'Content-Type': 'application/json; charset=UTF-8',
-      Accept: 'application/json',
-      authorizationkey: 'GLOBIS_REST_HANDLER',
-    };
-    const GMSDBPayload = {
-      gmsKokyakuId: '1100417626',
-      eventCd: 'E-0000017213',
-      syosekiSoufusakiYubinNo: '101-0001',
-      syosekiSoufusakiJusyo: '東京都千代田区XXXXXXXX',
-      syosekiSoufusakiTelNo: '090-1111-2222',
-      yoyakuMoshikomiKbn: '02',
-      yoyakuKijitsu: '2025-10-10',
-    };
+    if (!eventYoyakuMoshikomi?.data || eventYoyakuMoshikomi.data.length === 0) {
+      setValidation((prev) => ({ ...prev, rowDataIsEmpty: true }));
+      return;
+    }
+
+    const handleTemporarySaveResult = await handleTemporarySave();
+    if (!handleTemporarySaveResult) return;
+
+    await new Promise((resolve) => setTimeout(resolve, 750));
+
+    const valuesToSend = eventYoyakuMoshikomi.data.map((row) => {
+      const idKey = String(row.ID);
+      const rawEdited = gmsValues[idKey];
+      const rawOriginal = row.GMS_KOKYAKU_ID ?? '';
+      const editedGms = rawEdited !== undefined ? rawEdited : rawOriginal;
+      const trimmedGms = String(editedGms ?? '').trim().slice(0, 10);
+
+      return {
+        event_id: String(row.EVENT_ID ?? eventId ?? '').slice(0, 12),
+        gms_kokyaku_id: trimmedGms,
+        koshin_id: String(appPrefix ?? '').slice(0, 30),
+      };
+    });
+
+    const hasEmptyGmsId = valuesToSend.some((v) => v.gms_kokyaku_id === '' || v.gms_kokyaku_id == null);
+    if (hasEmptyGmsId) {
+      setValidation((prev) => ({ ...prev, emptyGmsIdError: true }));
+      return;
+    }
+
     try {
-      const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(GMSDBPayload) });
-      if (!resp.ok) {
-        setValidation((prev) => ({ ...prev, schoolDbIntegrationFailed: true }));
-        return;
-      }
-      setValidation((prev) => ({ ...prev, gmsdbIntegrationCompleted: true }));
-    } catch (err) {
-      console.error('GMSDB integration error', err);
-      setValidation((prev) => ({ ...prev, schoolDbIntegrationFailed: true }));
+      const resp = await post('/api/ocrs_f/post_school_tt_moshikomi', valuesToSend);
+      console.log('post_school_tt_moshikomi response:', resp);
+      setValidation((prev) => ({ ...prev, gmsdbIntegrationCompleted: true, schoolDbIntegrationFailed: false }));
+    } catch (error) {
+      console.error('post_school_tt_moshikomi failed:', error);
+      setValidation((prev) => ({ ...prev, schoolDbIntegrationFailed: true, gmsdbIntegrationCompleted: false }));
     }
   };
 
@@ -580,6 +641,21 @@ const EventDetailPage: React.FC = () => {
     koshin_id: string,
   ) => {
     const payload = { event_id, yoyaku_kigen, qualtrics_url, koshin_id };
+
+
+    // qualtrics_url が有効なURL形式でない場合、エラーを出す
+    if (
+      qualtrics_url &&
+      (
+        !isValidUrlRegex(qualtrics_url) ||
+        containsHiragana(qualtrics_url) ||
+        containsKatakana(qualtrics_url)
+      )
+    ) {
+      setValidation((prev) => ({ ...prev, patchTtEventQualtricsUrlInvalid: true }));
+      throw new Error('Invalid Qualtrics URL format');
+    }
+
     try {
       const resp = await post('/api/ocrs_f/patch_tt_event', payload);
 
@@ -592,9 +668,9 @@ const EventDetailPage: React.FC = () => {
     }
   };
 
-  const handleTemporarySave = async () => {
+  const handleTemporarySave = async (): Promise<boolean> => {
     setValidation({
-      hasEmptyGmsId: false,
+      emptyGmsIdError: false,
       patchTtReservationApplicationUpdateFailed: false,
       gmsdbIntegrationCompleted: false,
       schoolDbIntegrationFailed: false,
@@ -602,12 +678,49 @@ const EventDetailPage: React.FC = () => {
       rowDataIsEmpty: false,
       patchTtEventUpdated: false,
       patchTtEventFailed: false,
+      patchTtEventQualtricsUrlInvalid: false,
+      waitingFlgInvalid: false,
+      sameClassCdAndPriorityDuplicate: false,
+      invalidPriorityValue: false,
+      priorityValueDosesNotExist: false,
     });
 
     if (!eventYoyakuMoshikomi?.data) {
       // データがない場合は処理しない
       setValidation((prev) => ({ ...prev, rowDataIsEmpty: true }));
-      return;
+      return false;
+    }
+
+    const baselinePriorityMap = new Map<string, Set<number>>();
+    for (const r of eventYoyakuMoshikomi.data) {
+      const classCd = String(r.CLASS_CD ?? '');
+      const setForClass = baselinePriorityMap.get(classCd) ?? new Set<number>();
+      setForClass.add(Number(r.PRIORITY ?? 0));
+      baselinePriorityMap.set(classCd, setForClass);
+    }
+
+    const classPriorityMap = new Map<string, Set<number>>();
+    for (const r of eventYoyakuMoshikomi.data) {
+      const prStr = (priorityValues[r.ID] ?? String(r.PRIORITY ?? '')).trim();
+
+      if (prStr === '' || !/^\d+$/.test(prStr)) {
+        setValidation((prev) => ({ ...prev, invalidPriorityValue: true }));
+        console.warn('Invalid priority detected for ID', r.ID, 'value:', prStr);
+        return false;
+      }
+
+      const prNum = Number(prStr);
+      const classCd = String(r.CLASS_CD ?? '');
+
+      const setForClass = classPriorityMap.get(classCd) ?? new Set<number>();
+      if (setForClass.has(prNum)) {
+        // 同じクラスコードに対して重複する優先順位が存在します。
+        setValidation((prev) => ({ ...prev, sameClassCdAndPriorityDuplicate: true }));
+        console.warn('Duplicate priority detected for CLASS_CD', classCd, 'priority', prNum);
+        return false;
+      }
+      setForClass.add(prNum);
+      classPriorityMap.set(classCd, setForClass);
     }
 
     // patch_tt_yoyaku_moshikomiを全データ分実施
@@ -619,6 +732,7 @@ const EventDetailPage: React.FC = () => {
       const newYoyakuIso = yoyakuKigen ? yoyakuKigen.format('YYYY-MM-DD') : undefined;
 
       await patchTtEvent(targetEventId, newYoyakuIso, qualtricsUrl ?? undefined, appPrefix);
+      await new Promise((resolve) => setTimeout(resolve, 750));
 
       setEventDetail((prev) =>
         prev
@@ -635,11 +749,10 @@ const EventDetailPage: React.FC = () => {
 
       const requests = eventYoyakuMoshikomi.data.map((row) => {
         // 可能な限り ID は変更しない
-        const idStr = String(row.ID ?? '');
+        const idStr = row.ID;
         const eventIdStr = String(row.EVENT_ID ?? '');
         const classCdStr = String(row.CLASS_CD ?? '');
-        // Build priority as string (from priorityValues string map)
-        const priorityStr = String(priorityValues[row.ID] ?? String(row.PRIORITY ?? '')).slice(0, 10);
+        const priority = Number(priorityValues[row.ID] ?? row.PRIORITY ?? 0);
 
         const rawEdited = gmsValues[String(row.ID)];
         const rawOriginal = row.GMS_KOKYAKU_ID ?? '';
@@ -648,30 +761,19 @@ const EventDetailPage: React.FC = () => {
 
         const koshinId = String(appPrefix ?? '').slice(0, 30);
 
-        // バックエンドの制限に対して長さを検証してから送信する。
-        const errs: string[] = [];
-        if (idStr.length === 0) errs.push(`IDが空です:  ${JSON.stringify(row)}`);
-        if (idStr.length > 10) errs.push(`ID桁数が上限(10桁)を超えています (${idStr.length} > 10): ${idStr}`);
-        if (eventIdStr.length > 12) errs.push(`event_id桁数が上限(12桁)を超えています (${eventIdStr.length} > 12): ${eventIdStr}`);
-        if (classCdStr.length > 10) errs.push(`class_cd桁数が上限(10桁)を超えています (${classCdStr.length} > 10): ${classCdStr}`);
-        if (priorityStr.length > 10) errs.push(`priority桁数が上限(10桁)を超えています (${priorityStr.length} > 10): ${priorityStr}`);
-        if (trimmedGms.length > 10) errs.push(`gms_kokyaku_id桁数が上限(10桁)を超えています (${trimmedGms.length} > 10): ${trimmedGms}`);
-        if (koshinId.length > 30) errs.push(`koshin_id桁数が上限(30桁)を超えています (${koshinId.length} > 30)`);
-
-        if (errs.length > 0) {
-          return Promise.reject(new Error(`Validation failed for id=${idStr}: ${errs.join('; ')}`));
+        if (String(row.WAITING_FLG) === '-') {
+          setValidation((prev) => ({ ...prev, waitingFlgInvalid: true }));
+          return Promise.reject(new Error(`Invalid WAITING_FLG '-' for id=${idStr}`));
         }
 
-        const payload: Record<string, string> = {
-          id: idStr,
+        const payload: Record<string, string | number> = {
+          id: row.ID,
           event_id: eventIdStr,
           class_cd: classCdStr,
-          priority: priorityStr,
+          priority: priority,
           gms_kokyaku_id: trimmedGms,
           koshin_id: koshinId,
         };
-
-        console.log('patch payload for id=', idStr, payload);
 
         return post('/api/ocrs_f/patch_tt_yoyaku_moshikomi', payload);
       });
@@ -685,14 +787,13 @@ const EventDetailPage: React.FC = () => {
         if (r.status === 'rejected') {
           console.error('patch failed for row index', idx, 'error:', r.reason);
           failed.push({ index: idx, reason: r.reason });
-        } else {
-          console.log('patch fulfilled for row index', idx, 'value:', r.value);
         }
       });
 
       if (failed.length > 0) {
         setValidation((prev) => ({ ...prev, patchTtReservationApplicationUpdateFailed: true }));
         console.warn('Some updates failed:', failed);
+        return false;
       } else {
         setValidation((prev) => ({ ...prev, yoyakuMoshikomiUpdateCompleted: true }));
 
@@ -709,17 +810,238 @@ const EventDetailPage: React.FC = () => {
           console.error('Failed to refresh reservation list after save', err);
         }
       }
+      return true;
     } catch (err) {
       console.error('temporary save failed (outer):', err);
       setValidation((prev) => ({ ...prev, patchTtReservationApplicationUpdateFailed: true }));
+      return false;
+    }
+  };
+
+  const handlePriorityUpdate = (value: string, row: YoyakuMoshikomiData) => {
+    const realTimePriorityValue = value.replace(/\D/g, '').slice(0, 2);
+
+    setPriorityValues((prev) => ({ ...prev, [row.ID]: realTimePriorityValue }));
+
+    setEventYoyakuMoshikomi((prev) => {
+      if (!prev || !Array.isArray(prev.data)) return prev;
+
+      const classCd = row.CLASS_CD;
+
+      const waitingPriorities = new Set<string>(
+        prev.data
+          .filter((r) => r.CLASS_CD === classCd && String(r.WAITING_FLG) === '1')
+          .map((r) => String(r.PRIORITY)),
+      );
+
+      const existingPriorities = new Set<string>(
+        prev.data
+          .filter((r) => r.CLASS_CD === classCd)
+          .map((r) => String(r.PRIORITY)),
+      );
+
+      const newData = prev.data.map((r) => {
+        if (r.ID !== row.ID) return r;
+
+        const origPriorityBaseline = initialPriorityRef.current[row.ID];
+        const origPriorityStr =
+          origPriorityBaseline !== undefined ? String(origPriorityBaseline) : String(row.PRIORITY);
+
+        const origWaitingBaseline =
+          initialWaitingRef.current[row.ID] ?? (String(row.WAITING_FLG) === '1');
+        const origWaitingFlgStr = origWaitingBaseline ? '1' : '0';
+
+        // typed -> number (keep current if empty)
+        const newPriorityNum = realTimePriorityValue === '' ? r.PRIORITY : Number(realTimePriorityValue);
+        const newPriorityStr = String(newPriorityNum);
+
+        const newRow = { ...r, PRIORITY: newPriorityNum };
+
+        // PRIORITYが元の値から変更されていない場合、WAITING_FLGを維持する
+        if (realTimePriorityValue === '' || !existingPriorities.has(newPriorityStr)) {
+          newRow.WAITING_FLG = '-';
+        // PRIORITYが元の値と同じなら、元のWAITING_FLGを維持
+        } else if (newPriorityStr === origPriorityStr) {
+          newRow.WAITING_FLG = origWaitingFlgStr;
+        // 新しいPRIORITYが同一CLASS_CD内でWAITING_FLG='1'のPRIORITYと一致する場合、WAITING_FLGを'1'に設定
+        } else if (waitingPriorities.has(newPriorityStr)) {
+          newRow.WAITING_FLG = '1';
+        } else {
+          newRow.WAITING_FLG = '0';
+        }
+
+        return newRow;
+      });
+
+      return { ...prev, data: newData };
+    });
+  };
+
+  const [sortBy, setSortBy] = React.useState<string | null>(null);
+  const [sortDir, setSortDir] = React.useState<'asc' | 'desc' | null>(null);
+
+  const handleSortToggle = (key: string) => {
+    if (sortBy !== key) {
+      setSortBy(key);
+      setSortDir('asc');
+    } else {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     }
   };
 
   // --- 情報表示リスト定義 (柔軟にKey/Label/値/カスタム表示も可) ---
-  const columns: Array<ColumnConfig<YoyakuMoshikomiData>> = [
-    { label: 'メールアドレス', value: 'EMAIL', sx: { width: 300 } },
+
+  // 未連携者フィルタの適用
+  const filteredRows = React.useMemo(
+    () =>
+      eventYoyakuMoshikomi?.data?.filter((row) => (filterUnlinked ? Number(row.RENKEI_ZUMI_FLG) !== 1 : true)) ??
+      [],
+    [eventYoyakuMoshikomi?.data, filterUnlinked]
+  );
+
+  const getDisplayedGmsValue = React.useCallback((row: YoyakuMoshikomiData) => {
+    return String(gmsValues[String(row.ID)] ?? row.GMS_KOKYAKU_ID ?? '');
+  }, [gmsValues]);
+
+  const sortedRows = React.useMemo(() => {
+    const rows = [...filteredRows];
+    if (!sortBy) return rows;
+
+    if (sortBy === 'EMAIL') {
+      rows.sort((a, b) => {
+        const va = String((a as YoyakuMoshikomiData).EMAIL ?? '').toLowerCase();
+        const vb = String((b as YoyakuMoshikomiData).EMAIL ?? '').toLowerCase();
+        const cmp = va.localeCompare(vb, 'ja', { sensitivity: 'base' });
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    } else if (sortBy === 'GMS_KOKYAKU_ID') {
+      rows.sort((a, b) => {
+        const sa = getDisplayedGmsValue(a);
+        const sb = getDisplayedGmsValue(b);
+
+        // extract digits for numeric comparison
+        const da = sa.replace(/\D/g, '');
+        const db = sb.replace(/\D/g, '');
+
+        const aIsNum = da !== '';
+        const bIsNum = db !== '';
+
+        if (aIsNum && bIsNum) {
+          const na = Number(da);
+          const nb = Number(db);
+          const cmp = na - nb;
+          return sortDir === 'asc' ? cmp : -cmp;
+        }
+
+        // If one side is numeric and other not, put numeric before non-numeric when ascending
+        if (aIsNum && !bIsNum) {
+          return sortDir === 'asc' ? -1 : 1;
+        }
+        if (!aIsNum && bIsNum) {
+          return sortDir === 'asc' ? 1 : -1;
+        }
+
+        const cmp = sa.localeCompare(sb, 'ja', { sensitivity: 'base' });
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    } else if (sortBy === 'CLASS_CD') {
+      rows.sort((a, b) => {
+        const ca = String(a.CLASS_CD ?? '');
+        const cb = String(b.CLASS_CD ?? '');
+
+        const da = ca.replace(/\D/g, '');
+        const db = cb.replace(/\D/g, '');
+
+        const aIsNum = da !== '';
+        const bIsNum = db !== '';
+
+        let cmp = 0;
+        if (aIsNum && bIsNum) {
+          cmp = Number(da) - Number(db);
+        } else if (aIsNum && !bIsNum) {
+          cmp = -1;
+        } else if (!aIsNum && bIsNum) {
+          cmp = 1;
+        } else {
+          cmp = ca.localeCompare(cb, 'ja', { sensitivity: 'base' });
+        }
+
+        if (cmp !== 0) {
+          return sortDir === 'asc' ? cmp : -cmp;
+        }
+
+        const pa = Number(priorityValues[a.ID] ?? a.PRIORITY ?? 0);
+        const pb = Number(priorityValues[b.ID] ?? b.PRIORITY ?? 0);
+        if (pa !== pb) return pa - pb;
+
+        const ida = Number(a.ID ?? 0);
+        const idb = Number(b.ID ?? 0);
+        return ida - idb;
+      });
+    }
+
+    return rows;
+  }, [filteredRows, sortBy, sortDir, priorityValues, getDisplayedGmsValue]);
+
+  type ExtendedColumnConfig<T> = Omit<ColumnConfig<T>, 'label'> & {
+    label: React.ReactNode;
+  };
+  const columns: Array<ExtendedColumnConfig<YoyakuMoshikomiData>> = [
+    {
+      label:(
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => handleSortToggle('EMAIL')}
+          sx={{ textTransform: 'none', padding: '0 8px', minWidth: 0, display: 'flex', alignItems: 'center' }}
+        >
+          メールアドレス
+          <ExpandLessRoundedIcon
+            sx={{
+              fontSize: '20px',
+              marginLeft: '4px',
+              transform:
+                sortBy === 'EMAIL'  && sortDir === null
+                  ? 'rotate(0deg)'
+                  : sortBy === 'EMAIL'  && sortDir === 'asc'
+                  ? 'rotate(0deg)'
+                  : 'rotate(180deg)',
+              transition: 'transform 0.3s',
+            }}
+          />
+        </Button>
+      ),
+      value: 'EMAIL',
+      sx: { width: 300 },
+    },
     { label: '氏名', value: 'SHIMEI', sx: { width: 150 } },
-    { label: 'クラスコード', value: 'CLASS_CD', sx: { width: 120 } },
+    {
+      label: (
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => handleSortToggle('CLASS_CD')}
+          sx={{ textTransform: 'none', padding: '0 8px', minWidth: 0 }}
+        >
+          クラスコード
+          <ExpandLessRoundedIcon
+            sx={{
+              fontSize: '20px',
+              marginLeft: '4px',
+              transform:
+                sortBy === 'CLASS_CD'  && sortDir === null
+                  ? 'rotate(0deg)'
+                  : sortBy === 'CLASS_CD'  && sortDir === 'asc'
+                  ? 'rotate(0deg)'
+                  : 'rotate(180deg)',
+              transition: 'transform 0.3s',
+            }}
+          />
+        </Button>
+      ),
+      value: 'CLASS_CD',
+      sx: { width: 150 },
+    },
     { label: '申込クラス', value: 'CLASS_HYOJI', sx: { width: 250 } },
     {
       label: '優先度',
@@ -728,7 +1050,7 @@ const EventDetailPage: React.FC = () => {
       sx: { width: 100 },
       render: (row: YoyakuMoshikomiData) => {
         const isUnlinked =
-          row.RENKEI_ZUMI_FLG === '0' || Number(row.RENKEI_ZUMI_FLG) === 0 || row.RENKEI_ZUMI_FLG == null;
+          row.RENKEI_ZUMI_FLG === '0' || row.RENKEI_ZUMI_FLG == null;
         const originalPriorityValue = priorityValues[row.ID] ?? String(row.PRIORITY);
 
         if (isUnlinked) {
@@ -738,46 +1060,7 @@ const EventDetailPage: React.FC = () => {
               variant="outlined"
               type="text"
               value={originalPriorityValue}
-              onChange={(e) => {
-                const realTimePriorityValue = e.target.value.replace(/\D/g, '').slice(0, 2);
-                setPriorityValues((prev) => ({ ...prev, [row.ID]: realTimePriorityValue }));
-                setEventYoyakuMoshikomi((prev) => {
-                  if (!prev || !Array.isArray(prev.data)) return prev;
-                  const classCd = row.CLASS_CD;
-                  const waitingPriorities = new Set<string>(
-                    prev.data
-                      .filter((r) => r.CLASS_CD === classCd && String(r.WAITING_FLG) === '1')
-                      .map((r) => String(r.PRIORITY)),
-                  );
-
-              const newData = prev.data.map((r) => {
-                if (r.ID === row.ID) {
-                  const origPriorityBaseline = initialPriorityRef.current[row.ID];
-                  const origPriorityStr = origPriorityBaseline !== undefined ? String(origPriorityBaseline) : String(row.PRIORITY);
-                  const origWaitingBaseline = initialWaitingRef.current[row.ID] ?? (String(row.WAITING_FLG) === '1');
-
-                  const newPriorityNum = realTimePriorityValue === '' ? r.PRIORITY : Number(realTimePriorityValue);
-                  const newPriorityStr = String(newPriorityNum);
-
-                  const newRow = { ...r, PRIORITY: newPriorityNum };
-
-                  if (realTimePriorityValue === '') {
-                    newRow.WAITING_FLG = '-';
-                  } else if (origWaitingBaseline && newPriorityStr === origPriorityStr) {
-                    newRow.WAITING_FLG = '1';
-                  } else if (waitingPriorities.has(newPriorityStr)) {
-                    newRow.WAITING_FLG = '1';
-                  } else {
-                    newRow.WAITING_FLG = '0';
-                  }
-                  return newRow;
-                }
-                return r;
-              });
-
-                  return { ...prev, data: newData };
-                });
-              }}
+              onChange={(e) => handlePriorityUpdate(e.target.value, row)}
               inputProps={{
                 style: { fontSize: '0.875rem' },
                 inputMode: 'numeric',
@@ -792,7 +1075,30 @@ const EventDetailPage: React.FC = () => {
     },
     { label: 'WTGフラグ', value: 'WAITING_FLG', align: 'center', sx: { width: 120 } },
     {
-      label: 'GMS顧客番号',
+      // Make GMS顧客番号 header clickable to toggle numeric sort
+      label: (
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => handleSortToggle('GMS_KOKYAKU_ID')}
+          sx={{ textTransform: 'none', padding: '0 8px', minWidth: 0 }}
+        >
+          GMS顧客番号
+          <ExpandLessRoundedIcon
+            sx={{
+              fontSize: '20px',
+              marginLeft: '4px',
+              transform:
+                sortBy === 'GMS_KOKYAKU_ID'  && sortDir === null
+                  ? 'rotate(0deg)'
+                  : sortBy === 'GMS_KOKYAKU_ID'  && sortDir === 'asc'
+                  ? 'rotate(0deg)'
+                  : 'rotate(180deg)',
+              transition: 'transform 0.3s',
+            }}
+          />
+        </Button>
+      ),
       align: 'center',
       sx: { width: 250 },
       render: (row: YoyakuMoshikomiData) => {
@@ -809,6 +1115,8 @@ const EventDetailPage: React.FC = () => {
               value={originalGmsValues}
               onChange={(e) => {
                 const realTimeGmsValues = e.target.value.replace(/\D/g, '').slice(0, 10);
+
+                // check if realTimeGmsValues has some empty value''
                 setGmsValues((prev) => ({ ...prev, [String(row.ID)]: realTimeGmsValues }));
               }}
               inputProps={{
@@ -824,11 +1132,6 @@ const EventDetailPage: React.FC = () => {
       },
     },
   ];
-
-  // 未連携者フィルタの適用
-  const filteredRows =
-    eventYoyakuMoshikomi?.data?.filter((row) => (filterUnlinked ? Number(row.RENKEI_ZUMI_FLG) !== 1 : true)) ??
-    [];
 
   // イベント情報リスト定義 (QUALTRICS_URLの編集可能およびYOYAKU_KIGENの日付ピッカーをレンダリング)
   const eventInfoList = [
@@ -901,7 +1204,7 @@ const EventDetailPage: React.FC = () => {
           </Grid>
 
           <Grid sx={{ flexGrow: 1 }}>
-            <Grid container justifyContent="flex-start" alignItems="flex-end" flexDirection="column" spacing={2}>
+            <Grid container justifyContent="flex-start" alignItems={isMobile ? "center" : "flex-end"} flexDirection="column" spacing={2} gap={isMobile ? '20px': ''}>
               <Grid>
                 <Chip label="URL" variant="outlined" sx={{ minWidth: '108px', marginRight: '10px' }} />
                 {eventDetail?.URL ? (
@@ -913,13 +1216,13 @@ const EventDetailPage: React.FC = () => {
                 )}
               </Grid>
               <Grid>
-                {eventDetail?.URL ? <QRCode value={eventDetail.URL} size={70} /> : <Typography color="error">URLがありません</Typography>}
+                {eventDetail?.URL ? <QRCode value={eventDetail.URL} size={isMobile ? 140 : 70} /> : <Typography color="error">URLがありません</Typography>}
               </Grid>
-              <Grid sx={{ marginLeft: 'auto' }}>
+              <Grid sx={{ width: isMobile ? '100%' : 'auto', marginLeft: 'auto' }}>
                 <Button
                   variant="outlined"
                   size="small"
-                  sx={{ padding: '4px 8px', height: '40px' }}
+                  sx={{ padding: '4px 8px', height: '40px', width: isMobile ? '100%' : 'auto' }}
                   startIcon={<LinkIcon />}
                   onClick={handleSalesforceLink}
                 >
@@ -936,32 +1239,32 @@ const EventDetailPage: React.FC = () => {
       ) : (
         <>
           <CustomAlert notificationLists={notificationLists} sx={{ marginBottom: '20px' }} />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div>
-              <Button variant="outlined" size="small" sx={{ padding: '4px 8px', height: '40px' }} startIcon={<LinkIcon />} onClick={handleGmsdbLink}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '20px' : 0 }}>
+            <Box sx={{ width: isMobile ? '100% !important' : 'auto'}}>
+              <Button variant="outlined" size={!isMobile ? 'small' : 'large'} sx={{ width: isMobile ? '100% !important' : 'auto', padding: '4px 8px', height: '40px' }} startIcon={<LinkIcon />} onClick={handleGmsdbLink}>
                 GMSDB連携
               </Button>
-            </div>
-            <div>
+            </Box>
+            <Box>
               <Checkbox checked={filterUnlinked} onChange={(e) => setFilterUnlinked(e.target.checked)} sx={{ display: 'inline-block', padding: 0, margin: '2px 8px 0 0' }} />
               未連携者に絞り込み
               <Button variant="contained" sx={{ minWidth: '140px', padding: '4px 12px', height: '40px', marginLeft: '40px' }} onClick={handleTemporarySave}>
                 一時保存
               </Button>
-            </div>
+            </Box>
           </Box>
 
           {eventYoyakuMoshikomi && (
             <DataTable
               columns={columns}
-              rows={filteredRows}
+              rows={sortedRows}
               tableProps={{
                 sx: { border: '1px solid #DDDDDD', minWidth: 650 },
               }}
               headSx={{ backgroundColor: '#F7F7F7' }}
               cellSx={{
                 borderTop: '1px solid #DDDDDD',
-                padding: '10px 16px',
+                padding: '10px 8px',
               }}
             />
           )}

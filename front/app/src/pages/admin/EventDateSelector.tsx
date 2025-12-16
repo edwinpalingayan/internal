@@ -35,24 +35,30 @@ import type { GetEventTtEventResponse, EventTtEvent } from '@/types/EventTtEvent
 dayjs.locale('ja');
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Tokyo');
 
-// ---- Utility Components ----
-export const DateCell: React.FC<{ isoDateCellDate: string }> = ({ isoDateCellDate }) => (
-  <>
-    {dayjs(isoDateCellDate).format('YYYY/M/D')}（
-    {['日', '月', '火', '水', '木', '金', '土'][dayjs(isoDateCellDate).day()]}）
-  </>
-);
+export const DateCell: React.FC<{ isoDateCellDate: string }> = ({ isoDateCellDate }) => {
+  const d = dayjs.utc(isoDateCellDate).tz('Asia/Tokyo');
+  const weekday = ['日', '月', '火', '水', '木', '金', '土'][d.day()];
+  return (
+    <>
+      {d.format('YYYY/M/D')}（{weekday}）
+    </>
+  );
+};
 
 export const DurationCell: React.FC<{
   isoStartDurationCellDate: string;
   isoEndDurationCellDate: string;
-}> = ({ isoStartDurationCellDate, isoEndDurationCellDate }) => (
-  <>
-    {dayjs(isoStartDurationCellDate).format('HH:mm')} 〜{' '}
-    {dayjs(isoEndDurationCellDate).format('HH:mm')}
-  </>
-);
+}> = ({ isoStartDurationCellDate, isoEndDurationCellDate }) => {
+  const start = dayjs.utc(isoStartDurationCellDate).tz('Asia/Tokyo');
+  const end = dayjs.utc(isoEndDurationCellDate).tz('Asia/Tokyo');
+  return (
+    <>
+      {start.format('HH:mm')} 〜 {end.format('HH:mm')}
+    </>
+  );
+};
 
 // ---- Filter Controls ----
 type FilterOption = { label: string; value: string };
@@ -265,13 +271,17 @@ export default function EventDateSelector() {
 
   // フィルター処理：すべてのフィルターを同時に適用
   const filteredEvents = useMemo(() => {
-    return data.filter((event) => {
+    const filtered = data.filter((event) => {
       const matchType =
         selectedEventTypes.length === 0 || selectedEventTypes.includes(event.EVENT_KBN_MEI);
       const matchLocation = !selectedLocation || event.KAISAI_KO_MEI === selectedLocation;
       const matchDate = !selectedDate || dayjs(event.EVENT_START_TIME).isSame(selectedDate, 'day');
       return matchType && matchLocation && matchDate;
     });
+
+    return [...filtered].sort(
+      (a, b) => dayjs(b.EVENT_START_TIME).valueOf() - dayjs(a.EVENT_START_TIME).valueOf(),
+    );
   }, [data, selectedEventTypes, selectedLocation, selectedDate]);
 
   // ハンドラー
