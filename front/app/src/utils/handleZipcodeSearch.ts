@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 export type AddressFields = {
   address1: string;
@@ -29,54 +29,56 @@ export const handleZipcodeSearch = async ({
   setZipError(null);
   // 郵便番号が無効な場合は、エラーを設定し住所フィールドをクリアします
   if (!postalCode || !/^\d{3}-?\d{4}$/.test(postalCode)) {
-    setZipError('正しい郵便番号を入力してください');
+    setZipError("正しい郵便番号を入力してください");
     setFields((f: AddressFields) => ({
       ...f,
-      address1: '',
-      address2: '',
-      address3: '',
+      address1: "",
+      address2: "",
+      address3: "",
     }));
     return;
   } else if (validation.postalCode) {
     setZipError(null);
     setFields((f: AddressFields) => ({
       ...f,
-      address1: '',
-      address2: '',
-      address3: '',
+      address1: "",
+      address2: "",
+      address3: "",
     }));
     return;
   }
   setIsZipLoading(true);
   try {
     // 郵便番号APIを使用して住所を取得
-    const response = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${postalCode}`);
+    const response = await fetch(
+      `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${postalCode}`,
+    );
     const data = await response.json();
     const result = data.results && data.results[0];
 
     if (result) {
       setFields((f: AddressFields) => ({
         ...f,
-        address1: [result.address1, result.address2].filter(Boolean).join(''),
-        address2: result.address3 || '',
-        address3: '',
+        address1: [result.address1, result.address2].filter(Boolean).join(""),
+        address2: result.address3 || "",
+        address3: "",
       }));
     } else {
-      setZipError('該当する住所が見つかりませんでした');
+      setZipError("該当する住所が見つかりませんでした");
       setFields((f: AddressFields) => ({
         ...f,
-        address1: '',
-        address2: '',
-        address3: '',
+        address1: "",
+        address2: "",
+        address3: "",
       }));
     }
   } catch {
-    setZipError('住所検索に失敗しました');
+    setZipError("住所検索に失敗しました");
     setFields((f: AddressFields) => ({
       ...f,
-      address1: '',
-      address2: '',
-      address3: '',
+      address1: "",
+      address2: "",
+      address3: "",
     }));
   } finally {
     setIsZipLoading(false);

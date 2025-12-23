@@ -1,11 +1,13 @@
-import type { SchoolClassDetails } from '@/types/SchoolClassDetailsResponse';
+import type { SchoolClassDetails } from "@/types/SchoolClassDetailsResponse";
 
 /**
  * クラスの選択数が多すぎる
  * 全科目（KAMOKU_MEI）で3クラス（CLASS_MEI）を超えて選択した場合にエラー。
  * Error if a user selects more than 2 classes across all subjects.
  */
-export function validateMaxTwoTotalClasses(selected: SchoolClassDetails[]): boolean {
+export function validateMaxTwoTotalClasses(
+  selected: SchoolClassDetails[],
+): boolean {
   return selected.length > 2;
 }
 
@@ -14,7 +16,9 @@ export function validateMaxTwoTotalClasses(selected: SchoolClassDetails[]): bool
  * 同一科目（KAMOKU_CD）で2クラス（CLASS_MEI）を超えて選択した場合にエラー。
  * Error if a user selects more than 1 class per subject.
  */
-export function validateMaxSingleClassesPerSubject(selected: SchoolClassDetails[]): boolean {
+export function validateMaxSingleClassesPerSubject(
+  selected: SchoolClassDetails[],
+): boolean {
   const countByKamokuCd: Record<string, number> = {};
   selected.forEach((item) => {
     const kamokuCd = item.KAMOKU_CD;
@@ -36,17 +40,17 @@ export function validateTimeConflict(selected: SchoolClassDetails[]): boolean {
   selected.forEach((item) => {
     for (let i = 1; i <= 6; i++) {
       const dayRaw = item[`DAY${i}_YOBI_CD`] ?? item.YOBI_CD ?? 0;
-      const day = typeof dayRaw === 'number' ? dayRaw : Number(dayRaw) || 0;
+      const day = typeof dayRaw === "number" ? dayRaw : Number(dayRaw) || 0;
       const start = item[`DAY${i}_KAISAI_JIKAN_KAISHI`];
       const end = item[`DAY${i}_KAISAI_JIKAN_SYURYO`];
-      if (typeof start === 'string' && typeof end === 'string' && day) {
+      if (typeof start === "string" && typeof end === "string" && day) {
         allSlots.push({ day, start, end });
       }
     }
     // グローバルな時間（DAY1-6以外）を持つクラスの場合
     if (
-      typeof item.KAISAI_JIKAN_KAISHI === 'string' &&
-      typeof item.KAISAI_JIKAN_SYURYO === 'string' &&
+      typeof item.KAISAI_JIKAN_KAISHI === "string" &&
+      typeof item.KAISAI_JIKAN_SYURYO === "string" &&
       item.YOBI_CD
     ) {
       allSlots.push({
@@ -87,32 +91,34 @@ export function validateTimeConflict(selected: SchoolClassDetails[]): boolean {
  * 例: 2024-07-01 午前のクラスと午後のクラスを両方選択した場合にtrueを返す。
  * Duplicate Check (Different Subject, Same Date)
  */
-export function validateSameDayMorningAfternoon(selected: SchoolClassDetails[]): boolean {
+export function validateSameDayMorningAfternoon(
+  selected: SchoolClassDetails[],
+): boolean {
   // マップ: 日付 (YYYY-MM-DD) => 'morning' | 'afternoon' のセット
   const dateSessionMap: Record<string, Set<string>> = {};
 
   const getSessionType = (start: Date, end: Date) => {
     // 終了時刻が12:00より前なら「午前」、開始時刻が12:00以降なら「午後」
-    if (end.getHours() <= 12) return 'morning';
-    if (start.getHours() >= 12) return 'afternoon';
+    if (end.getHours() <= 12) return "morning";
+    if (start.getHours() >= 12) return "afternoon";
 
-    return 'both';
+    return "both";
   };
 
   selected.forEach((item) => {
     for (let i = 1; i <= 6; i++) {
       const startStr = item[`DAY${i}_KAISAI_JIKAN_KAISHI`];
       const endStr = item[`DAY${i}_KAISAI_JIKAN_SYURYO`];
-      if (typeof startStr === 'string' && typeof endStr === 'string') {
+      if (typeof startStr === "string" && typeof endStr === "string") {
         const start = new Date(startStr);
         const end = new Date(endStr);
         const date = start.toISOString().slice(0, 10); // YYYY-MM-DD
 
         const session = getSessionType(start, end);
         if (!dateSessionMap[date]) dateSessionMap[date] = new Set();
-        if (session === 'both') {
-          dateSessionMap[date].add('morning');
-          dateSessionMap[date].add('afternoon');
+        if (session === "both") {
+          dateSessionMap[date].add("morning");
+          dateSessionMap[date].add("afternoon");
         } else {
           dateSessionMap[date].add(session);
         }
@@ -122,7 +128,7 @@ export function validateSameDayMorningAfternoon(selected: SchoolClassDetails[]):
 
   // いずれかの日付で午前と午後の両方が選択されている場合に警告を出す
   return Object.values(dateSessionMap).some(
-    (sessions) => sessions.has('morning') && sessions.has('afternoon'),
+    (sessions) => sessions.has("morning") && sessions.has("afternoon"),
   );
 }
 
@@ -131,7 +137,8 @@ export function validateSameDayMorningAfternoon(selected: SchoolClassDetails[]):
  */
 export function getValidationResult(selected: SchoolClassDetails[]) {
   const maxTwoTotalClasses = validateMaxTwoTotalClasses(selected);
-  const maxSingleClassesPerSubject = validateMaxSingleClassesPerSubject(selected);
+  const maxSingleClassesPerSubject =
+    validateMaxSingleClassesPerSubject(selected);
   const hasTimeConflict = validateTimeConflict(selected);
   const sameDayMorningAfternoon = validateSameDayMorningAfternoon(selected);
   return {
@@ -139,7 +146,8 @@ export function getValidationResult(selected: SchoolClassDetails[]) {
     maxSingleClassesPerSubject,
     hasTimeConflict,
     sameDayMorningAfternoon,
-    hasAnyError: maxTwoTotalClasses || maxSingleClassesPerSubject || hasTimeConflict,
+    hasAnyError:
+      maxTwoTotalClasses || maxSingleClassesPerSubject || hasTimeConflict,
     hasAnyAlert: sameDayMorningAfternoon,
   };
 }

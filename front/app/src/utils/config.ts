@@ -6,14 +6,16 @@
 // =============================================================================
 
 export const MODE_ENV =
-  import.meta.env.MODE === 'production'
-    ? 'PRD' // アプリの実行環境
-    : import.meta.env.MODE === 'development'
-      ? 'DEV'
-      : import.meta.env.MODE === 'sandbox'
-        ? 'SND'
-        : 'PC';
-export const API_SECRET_KEY = import.meta.env[`VITE_${MODE_ENV}_API_SECRET_KEY`]; // BackEndのAPIの認証用のシークレットキー
+  import.meta.env.MODE === "production"
+    ? "PRD" // アプリの実行環境
+    : import.meta.env.MODE === "development"
+      ? "DEV"
+      : import.meta.env.MODE === "sandbox"
+        ? "SND"
+        : "PC";
+export const API_SECRET_KEY = import.meta.env[
+  `VITE_${MODE_ENV}_API_SECRET_KEY`
+]; // BackEndのAPIの認証用のシークレットキー
 export const API_APP_KEY = import.meta.env[`VITE_${MODE_ENV}_API_APP_KEY`]; // BackEndのAPIの認証用のアプリキー
 export const API_ORIGIN = import.meta.env[`VITE_${MODE_ENV}_API_ORIGIN`]; // BackEndのAPIのURLのORIGIN
 export const URL_PREFIX = import.meta.env[`VITE_${MODE_ENV}_URL_PREFIX`]; // SND環境でURLにmit-dを付与する為のプレフィックス

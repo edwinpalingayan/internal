@@ -1,13 +1,13 @@
 export function isValidJapanesePhoneNumber(phoneNumber: string): boolean {
   // ハイフン、スペース、括弧を削除して統一します
-  const normalized = phoneNumber.replace(/[-\s()]/g, '');
+  const normalized = phoneNumber.replace(/[-\s()]/g, "");
 
   // 一般的な国際電話番号形式（E.164）："+"で始まり、8〜15桁の数字が続く
   if (/^\+\d{8,15}$/.test(normalized)) {
     // 日本の番号（+81）の特別な処理
     if (/^\+81\d{9,10}$/.test(normalized)) {
       const afterCountryCode = normalized.substring(3);
-      if (!afterCountryCode.startsWith('0')) {
+      if (!afterCountryCode.startsWith("0")) {
         // Mobile: +8190xxxxxxxx, +8180xxxxxxxx, +8170xxxxxxxx
         if (
           /^90\d{8}$/.test(afterCountryCode) ||

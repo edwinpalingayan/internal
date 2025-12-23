@@ -1,4 +1,4 @@
-import type { GetEventTtEventResponse } from '@/types/EventTtEventResponse';
+import type { GetEventTtEventResponse } from "@/types/EventTtEventResponse";
 
 /**
  * イベントIDに一致するイベントの有効期間（YUKO_KIGEN）および開始日時（EVENT_START_TIME）を現在日付と比較して有効かどうか判定します。
@@ -10,7 +10,12 @@ export function validateEventPeriod(
   eventDetails: GetEventTtEventResponse | null,
   eventId: string | null,
 ): boolean {
-  if (!eventDetails || !eventDetails.data || eventDetails.data.length === 0 || !eventId)
+  if (
+    !eventDetails ||
+    !eventDetails.data ||
+    eventDetails.data.length === 0 ||
+    !eventId
+  )
     return false;
 
   const now = Date.now();

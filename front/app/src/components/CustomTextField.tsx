@@ -1,15 +1,15 @@
-import * as React from 'react';
-import TextField from '@mui/material/TextField';
-import Box from '@mui/material/Box';
-import styles from './CustomTextField.module.scss';
+import * as React from "react";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import styles from "./CustomTextField.module.scss";
 
 interface SingleFieldProps {
   label?: string;
-  variant?: 'outlined' | 'filled' | 'standard';
+  variant?: "outlined" | "filled" | "standard";
   value?: string;
   defaultValue?: string;
   name?: string;
-  type?: React.InputHTMLAttributes<unknown>['type'];
+  type?: React.InputHTMLAttributes<unknown>["type"];
   placeholder?: string;
   helperText?: string;
   error?: boolean;
@@ -22,35 +22,38 @@ interface CustomTextFieldProps extends SingleFieldProps {
   fields?: SingleFieldProps[];
 }
 
-export default function CustomTextField({ fields, ...rest }: CustomTextFieldProps) {
+export default function CustomTextField({
+  fields,
+  ...rest
+}: CustomTextFieldProps) {
   const renderFields = () => {
     if (fields && Array.isArray(fields) && fields.length > 0) {
       return fields.map((field, idx) => (
         <TextField
           key={field.name || idx}
           label={field.label}
-          variant={field.variant || 'outlined'}
+          variant={field.variant || "outlined"}
           value={field.value}
           defaultValue={field.defaultValue}
           name={field.name}
-          type={field.type || 'text'}
+          type={field.type || "text"}
           placeholder={field.placeholder}
           helperText={field.helperText}
           error={field.error}
           onChange={field.onChange}
           fullWidth={field.fullWidth}
           sx={{
-            '& .MuiInputBase-root': {
+            "& .MuiInputBase-root": {
               height: field.height || 48,
               borderRadius: 0,
             },
-            '& .MuiOutlinedInput-root': {
+            "& .MuiOutlinedInput-root": {
               borderRadius: 0,
-              '& fieldset': {
-                borderColor: '#888888',
+              "& fieldset": {
+                borderColor: "#888888",
               },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'var(--color-primary-blue, #1847C7)',
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "var(--color-primary-blue, #1847C7)",
               },
             },
           }}
@@ -60,11 +63,11 @@ export default function CustomTextField({ fields, ...rest }: CustomTextFieldProp
       return (
         <TextField
           label={rest.label}
-          variant={rest.variant || 'outlined'}
+          variant={rest.variant || "outlined"}
           value={rest.value}
           defaultValue={rest.defaultValue}
           name={rest.name}
-          type={rest.type || 'text'}
+          type={rest.type || "text"}
           placeholder={rest.placeholder}
           helperText={rest.helperText}
           error={rest.error}
@@ -72,17 +75,17 @@ export default function CustomTextField({ fields, ...rest }: CustomTextFieldProp
           fullWidth={rest.fullWidth}
           className={styles.custom_textarea}
           sx={{
-            '& .MuiInputBase-root': {
+            "& .MuiInputBase-root": {
               height: rest.height || 48,
               borderRadius: 0,
             },
-            '& .MuiOutlinedInput-root': {
+            "& .MuiOutlinedInput-root": {
               borderRadius: 0,
-              '& fieldset': {
-                borderColor: '#888888',
+              "& fieldset": {
+                borderColor: "#888888",
               },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'var(--color-primary-blue, #1847C7)',
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "var(--color-primary-blue, #1847C7)",
               },
             },
           }}
@@ -96,10 +99,10 @@ export default function CustomTextField({ fields, ...rest }: CustomTextFieldProp
       <Box
         component="form"
         sx={{
-          display: 'flex',
+          display: "flex",
           gap: 2,
-          flexDirection: fields && fields.length > 1 ? 'row' : 'column',
-          '& > *': { flex: 1 },
+          flexDirection: fields && fields.length > 1 ? "row" : "column",
+          "& > *": { flex: 1 },
         }}
         noValidate
         autoComplete="off"

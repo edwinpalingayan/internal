@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { Stack, Typography } from '@mui/material';
-import { FormTextField } from '@/components/FormTextField';
+import * as React from "react";
+import { Stack, Typography } from "@mui/material";
+import { FormTextField } from "@/components/FormTextField";
 
 type LabeledFieldProps = React.ComponentProps<typeof FormTextField> & {
   labelText?: string;
@@ -25,7 +25,7 @@ type LabeledFieldProps = React.ComponentProps<typeof FormTextField> & {
   buttonLabel?: React.ReactNode;
   onButtonClick?: () => void;
   buttonDisabled?: boolean;
-  buttonProps?: React.ComponentProps<'button'>;
+  buttonProps?: React.ComponentProps<"button">;
   sxcontainer?: React.CSSProperties | object;
   sxlabel?: React.CSSProperties | object;
   sxfield?: React.CSSProperties | object;
@@ -38,7 +38,7 @@ export const LabeledField: React.FC<LabeledFieldProps> = ({
   // fieldwidth = '100%',
   required = false,
   height = 70,
-  backgroundColor = '#F7F7F7',
+  backgroundColor = "#F7F7F7",
 
   // Dual field props
   placeholder1,
@@ -62,13 +62,13 @@ export const LabeledField: React.FC<LabeledFieldProps> = ({
 }) => {
   return (
     <Stack
-      direction={{ xs: 'column', md: 'row' }}
-      alignItems={{ xs: 'stretch', md: 'center' }}
+      direction={{ xs: "column", md: "row" }}
+      alignItems={{ xs: "stretch", md: "center" }}
       sx={{
-        width: '100%',
-        borderTop: 'solid 1px #DDDDDD',
-        borderRight: 'solid 1px #DDDDDD',
-        marginTop: '0 !important',
+        width: "100%",
+        borderTop: "solid 1px #DDDDDD",
+        borderRight: "solid 1px #DDDDDD",
+        marginTop: "0 !important",
         ...(tfProps.sxcontainer as object),
       }}
     >
@@ -76,30 +76,33 @@ export const LabeledField: React.FC<LabeledFieldProps> = ({
       <Stack
         direction="row"
         spacing={2}
-        justifyContent={'space-between'}
-        alignItems={'center'}
+        justifyContent={"space-between"}
+        alignItems={"center"}
         sx={{
           backgroundColor: backgroundColor,
           minWidth: { md: labelWidth },
-          minHeight: { md: height, xs: '45px' },
-          padding: '0 24px',
-          borderBottom: 'solid 1px #DDDDDD',
-          borderLeft: 'solid 1px #DDDDDD',
+          minHeight: { md: height, xs: "45px" },
+          padding: "0 24px",
+          borderBottom: "solid 1px #DDDDDD",
+          borderLeft: "solid 1px #DDDDDD",
           ...(tfProps.sxlabel as object),
         }}
       >
-        <Typography variant="body2" sx={{ textAlign: 'left', fontSize: '15px' }}>
+        <Typography
+          variant="body2"
+          sx={{ textAlign: "left", fontSize: "15px" }}
+        >
           {labelText}
         </Typography>
         {required && (
           <Typography
             component="span"
             sx={{
-              color: '#FFFFFF',
-              fontSize: '15px',
-              padding: '2px 4px',
-              backgroundColor: '#C82220',
-              height: 'fit-content',
+              color: "#FFFFFF",
+              fontSize: "15px",
+              padding: "2px 4px",
+              backgroundColor: "#C82220",
+              height: "fit-content",
             }}
           >
             必須
@@ -110,14 +113,14 @@ export const LabeledField: React.FC<LabeledFieldProps> = ({
       <Stack
         direction="row"
         spacing={2}
-        justifyContent={'space-between'}
-        alignItems={'center'}
+        justifyContent={"space-between"}
+        alignItems={"center"}
         sx={{
-          width: { sm: '100%', md: '100%' },
-          height: { sm: 'auto', md: height },
-          padding: { md: '10px', lg: '24px' },
-          borderBottom: 'solid 1px #DDDDDD',
-          borderLeft: 'solid 1px #DDDDDD',
+          width: { sm: "100%", md: "100%" },
+          height: { sm: "auto", md: height },
+          padding: { md: "10px", lg: "24px" },
+          borderBottom: "solid 1px #DDDDDD",
+          borderLeft: "solid 1px #DDDDDD",
           ...(tfProps.sxfield as object),
         }}
       >

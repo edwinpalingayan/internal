@@ -1,8 +1,8 @@
-import RadioGroup, { useRadioGroup } from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import type { FormControlLabelProps } from '@mui/material/FormControlLabel';
-import Radio from '@mui/material/Radio';
-import styles from './Selection.module.scss';
+import RadioGroup, { useRadioGroup } from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import type { FormControlLabelProps } from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
+import styles from "./Selection.module.scss";
 
 interface RadioOption {
   value: string;
@@ -37,7 +37,7 @@ function MyFormControlLabel({ isLast, ...props }: MyFormControlLabelProps) {
           }}
           // アイコンのサイズを必要に応じて調整
           sx={{
-            '& .MuiSvgIcon-root': {
+            "& .MuiSvgIcon-root": {
               fontSize: 14,
             },
             p: 0,
@@ -50,13 +50,13 @@ function MyFormControlLabel({ isLast, ...props }: MyFormControlLabelProps) {
         gap: 1,
         marginLeft: 0,
         marginRight: isLast ? 0 : 1,
-        marginBottom: '1rem',
-        p: '0 20px',
-        '.MuiFormControlLabel-label': {
-          fontSize: '15px',
+        marginBottom: "1rem",
+        p: "0 20px",
+        ".MuiFormControlLabel-label": {
+          fontSize: "15px",
         },
-        '& .Mui-checked + .MuiFormControlLabel-label': {
-          fontWeight: '500 !important',
+        "& .Mui-checked + .MuiFormControlLabel-label": {
+          fontWeight: "500 !important",
         },
       }}
       classes={{
@@ -71,12 +71,12 @@ export default function CustomRadioGroup({
   options,
   value,
   onChange,
-  name = 'custom-radio-group',
+  name = "custom-radio-group",
   defaultValue, // can be removed if not needed
 }: RadioProps) {
   // コントロールモード用の安全な値を決める
   // valueがundefinedなら空文字にしとくよ
-  const safeValue = typeof value === 'string' ? value : '';
+  const safeValue = typeof value === "string" ? value : "";
   return (
     <div>
       <RadioGroup

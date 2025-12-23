@@ -14,4 +14,5 @@ export interface IsInArrayFn<T> {
   (value: T, array: T[]): boolean;
 }
 
-export const isInArray: IsInArrayFn<unknown> = (value, array) => array.includes(value);
+export const isInArray: IsInArrayFn<unknown> = (value, array) =>
+  array.includes(value);

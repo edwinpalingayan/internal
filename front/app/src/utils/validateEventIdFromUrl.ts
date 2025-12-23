@@ -7,13 +7,14 @@ export function validateEventIdFromUrl(
   eventDetailsRef: React.RefObject<{ data: Array<{ EVENT_ID: string }> }>,
 ): string | null {
   const searchParams = new URLSearchParams(window.location.search);
-  const evid = searchParams.get('evid');
+  const evid = searchParams.get("evid");
 
-  if (!evid || evid === 'null') return 'イベントIDが必要です。';
+  if (!evid || evid === "null") return "イベントIDが必要です。";
 
-  const validEventIds = eventDetailsRef.current?.data?.map((ev) => ev.EVENT_ID) ?? [];
+  const validEventIds =
+    eventDetailsRef.current?.data?.map((ev) => ev.EVENT_ID) ?? [];
 
-  if (!validEventIds.includes(evid)) return '無効なイベントIDです。';
+  if (!validEventIds.includes(evid)) return "無効なイベントIDです。";
 
   return null;
 }

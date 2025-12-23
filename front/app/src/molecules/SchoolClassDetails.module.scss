@@ -1,6 +1,6 @@
-@use 'sass:color';
-@use '@/assets/styles/abstracts/variables' as *;
-@use '@/assets/styles/base/typography' as *;
+@use "sass:color";
+@use "@/assets/styles/abstracts/variables" as *;
+@use "@/assets/styles/base/typography" as *;
 
 .subject_title {
   font-family: $font-primary;
@@ -59,7 +59,7 @@
     display: block;
     &::before {
       position: absolute;
-      content: '';
+      content: "";
       top: 50%;
       left: 0;
       transform: translateY(-50%);

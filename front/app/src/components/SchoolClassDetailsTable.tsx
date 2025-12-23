@@ -1,17 +1,17 @@
-import * as React from 'react';
+import * as React from "react";
 
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 
-import MainContainer from '@/layouts/MainLayout/MainLayout';
+import MainContainer from "@/layouts/MainLayout/MainLayout";
 
-import type { SchoolClassDetails } from '@/types/SchoolClassDetailsResponse';
+import type { SchoolClassDetails } from "@/types/SchoolClassDetailsResponse";
 
-type TableCellAlign = 'left' | 'right' | 'inherit' | 'center' | 'justify';
+type TableCellAlign = "left" | "right" | "inherit" | "center" | "justify";
 
 export type ColumnConfig<T> = {
   label: string;
@@ -21,7 +21,10 @@ export type ColumnConfig<T> = {
     row: T,
     idx: number,
     checked: boolean,
-    handle: (index: number, row: T) => (event: React.ChangeEvent<HTMLInputElement>) => void,
+    handle: (
+      index: number,
+      row: T,
+    ) => (event: React.ChangeEvent<HTMLInputElement>) => void,
   ) => React.ReactNode;
   sx?: React.CSSProperties;
 };
@@ -56,9 +59,16 @@ export function SchoolClassDetailsTable({
 }: SchoolClassDetailsTableProps) {
   const CellComponent = CustomTableCellWidth ?? TableCell;
   return (
-    <MainContainer boxSx={isMobile ? { padding: '16px 12px' } : { p: 0 }} pcMaxWidth={pcMaxWidth}>
+    <MainContainer
+      boxSx={isMobile ? { padding: "16px 12px" } : { p: 0 }}
+      pcMaxWidth={pcMaxWidth}
+    >
       <TableContainer>
-        <Table sx={{ minWidth: 650 }} aria-label="class table" className={tableClassName}>
+        <Table
+          sx={{ minWidth: 650 }}
+          aria-label="class table"
+          className={tableClassName}
+        >
           <TableHead className={tableHeadClassName}>
             <TableRow>
               {columns.map((col, idxHead) =>
@@ -67,13 +77,13 @@ export function SchoolClassDetailsTable({
                     width={parseInt(String(col.sx.width), 10)}
                     key={`${col.label}-${idxHead}`}
                     sx={{
-                      fontSize: '13px',
+                      fontSize: "13px",
                       fontWeight: 500,
-                      color: '#333333 !important',
-                      background: '#f7f7f7',
-                      borderBottom: '#f7f7f7',
-                      padding: '13px 6px',
-                      textAlign: 'center',
+                      color: "#333333 !important",
+                      background: "#f7f7f7",
+                      borderBottom: "#f7f7f7",
+                      padding: "13px 6px",
+                      textAlign: "center",
                       ...col.sx,
                     }}
                   >
@@ -83,13 +93,13 @@ export function SchoolClassDetailsTable({
                   <CellComponent
                     key={`${col.label}-${idxHead}`}
                     sx={{
-                      fontSize: '13px',
+                      fontSize: "13px",
                       fontWeight: 500,
-                      color: '#333333 !important',
-                      background: '#f7f7f7',
-                      borderBottom: '#f7f7f7',
-                      padding: '13px 6px',
-                      textAlign: 'center',
+                      color: "#333333 !important",
+                      background: "#f7f7f7",
+                      borderBottom: "#f7f7f7",
+                      padding: "13px 6px",
+                      textAlign: "center",
                       ...col.sx,
                     }}
                   >
@@ -106,28 +116,39 @@ export function SchoolClassDetailsTable({
                   row.id?.toString() ||
                   `${row.KAISAI_KO_MEI}-${row.CLASS_MEI}-${row.CLASS_LABEL_MEI}-${idx}`
                 }
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 {columns.map((col, idxBody) => (
                   <CellComponent
                     key={`${col.label}-${idxBody}`}
-                    align={col.align || 'left'}
-                    className={col.label === '講師' ? tableBodyClassName + '-link' : undefined}
+                    align={col.align || "left"}
+                    className={
+                      col.label === "講師"
+                        ? tableBodyClassName + "-link"
+                        : undefined
+                    }
                     sx={{
-                      fontFamily: '$font-primary !important',
-                      fontSize: '14px',
-                      fontWeight: ['講師'].includes(col.label) ? 500 : 400,
-                      color: '#333333 !important',
-                      padding: '14px 6px',
-                      textAlign: 'center',
+                      fontFamily: "$font-primary !important",
+                      fontSize: "14px",
+                      fontWeight: ["講師"].includes(col.label) ? 500 : 400,
+                      color: "#333333 !important",
+                      padding: "14px 6px",
+                      textAlign: "center",
                       ...col.sx,
                     }}
                   >
                     {col.render
-                      ? col.render(row, idx, (checked ?? [])[idx] ?? false, handleCheckboxChange)
+                      ? col.render(
+                          row,
+                          idx,
+                          (checked ?? [])[idx] ?? false,
+                          handleCheckboxChange,
+                        )
                       : col.value
-                        ? (row[col.value as keyof SchoolClassDetails] as React.ReactNode)
-                        : ''}
+                        ? (row[
+                            col.value as keyof SchoolClassDetails
+                          ] as React.ReactNode)
+                        : ""}
                   </CellComponent>
                 ))}
               </TableRow>

@@ -1,16 +1,16 @@
-import axios from 'axios';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { generateBearerToken } from '@/utils/auth';
-import { API_URL } from '@/utils/config';
+import axios from "axios";
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { generateBearerToken } from "@/utils/auth";
+import { API_URL } from "@/utils/config";
 const token = generateBearerToken();
 
 const api: AxiosInstance = axios.create({
   // baseURL: '/', // <<--- Use root, so requests go to the Vite dev server
-  baseURL: API_URL || '/', //server.js
+  baseURL: API_URL || "/", //server.js
   timeout: 10000,
   headers: {
     Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -20,7 +20,10 @@ export const get = async <T>(
   params?: Record<string, unknown>,
   config?: AxiosRequestConfig,
 ): Promise<T> => {
-  const response: AxiosResponse<T> = await api.get(endpoint, { params, ...config });
+  const response: AxiosResponse<T> = await api.get(endpoint, {
+    params,
+    ...config,
+  });
   return response.data;
 };
 
@@ -39,10 +42,10 @@ export const post = async <T, D = unknown>(
   TODO: delete this when not needed
 */
 const randomUserApi: AxiosInstance = axios.create({
-  baseURL: 'https://randomuser.me',
+  baseURL: "https://randomuser.me",
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 

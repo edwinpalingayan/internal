@@ -1,18 +1,22 @@
-import * as React from 'react';
-import { useEffect, useRef } from 'react';
+import * as React from "react";
+import { useEffect, useRef } from "react";
 
-import { get } from '@/services/apiService';
-import type { GetSchoolClassDetailsResponse } from '@/types/SchoolClassDetailsResponse';
-import type { GetSchoolTmClassSearchResponse } from '@/types/SchoolTmClassSerchResponse';
+import { get } from "@/services/apiService";
+import type { GetSchoolClassDetailsResponse } from "@/types/SchoolClassDetailsResponse";
+import type { GetSchoolTmClassSearchResponse } from "@/types/SchoolTmClassSerchResponse";
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 export default function Root() {
   const navigate = useNavigate();
   const hasFetched = useRef(false);
 
-  const schoolClassDetails = React.useRef<GetSchoolClassDetailsResponse | null>(null);
-  const schoolClassSearch = React.useRef<GetSchoolTmClassSearchResponse | null>(null);
+  const schoolClassDetails = React.useRef<GetSchoolClassDetailsResponse | null>(
+    null,
+  );
+  const schoolClassSearch = React.useRef<GetSchoolTmClassSearchResponse | null>(
+    null,
+  );
 
   useEffect(() => {
     if (hasFetched.current) return;
@@ -21,11 +25,11 @@ export default function Root() {
     const fetchSchoolClassDetailsData = async () => {
       try {
         const res = await get<GetSchoolClassDetailsResponse>(
-          '/api/ocrs_f/get_school_tm_class_syosai',
+          "/api/ocrs_f/get_school_tm_class_syosai",
         );
         schoolClassDetails.current = res;
       } catch (error) {
-        console.error('API request failed:', error);
+        console.error("API request failed:", error);
       }
     };
     fetchSchoolClassDetailsData();
@@ -33,11 +37,11 @@ export default function Root() {
     const fetchSchoolClassSearchData = async () => {
       try {
         const res = await get<GetSchoolTmClassSearchResponse>(
-          '/api/ocrs_f/get_school_tm_class_search',
+          "/api/ocrs_f/get_school_tm_class_search",
         );
         schoolClassSearch.current = res;
       } catch (error) {
-        console.error('API request failed:', error);
+        console.error("API request failed:", error);
       }
     };
     fetchSchoolClassSearchData();

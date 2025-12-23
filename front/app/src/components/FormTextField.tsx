@@ -1,10 +1,10 @@
-import * as React from 'react';
-import TextField from '@mui/material/TextField';
-import type { TextFieldProps } from '@mui/material/TextField';
-import { Stack } from '@mui/material';
-import CustomButton from '@/components/CustomButton';
+import * as React from "react";
+import TextField from "@mui/material/TextField";
+import type { TextFieldProps } from "@mui/material/TextField";
+import { Stack } from "@mui/material";
+import CustomButton from "@/components/CustomButton";
 
-export type FormTextFieldProps = Omit<TextFieldProps, 'variant'> & {
+export type FormTextFieldProps = Omit<TextFieldProps, "variant"> & {
   errorMessage?: string;
   multiField?: boolean;
   hasButton?: boolean;
@@ -28,7 +28,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
   sx,
   multiField = false,
   hasButton = false,
-  buttonLabel = '',
+  buttonLabel = "",
   onButtonClick,
   buttonDisabled = false,
   buttonProps,
@@ -49,18 +49,18 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
           error={error}
           helperText={error ? errorMessage : props.helperText}
           sx={{
-            margin: { xs: '16px 8px !important' },
-            '& .MuiOutlinedInput-root': {
+            margin: { xs: "16px 8px !important" },
+            "& .MuiOutlinedInput-root": {
               borderRadius: 0,
               height: 40,
               fontSize: 14,
             },
-            '& .MuiOutlinedInput-input': {
-              padding: '9.5px 8px !important',
+            "& .MuiOutlinedInput-input": {
+              padding: "9.5px 8px !important",
             },
 
-            '& .Mui-disabled': {
-              backgroundColor: '#EAEAEA',
+            "& .Mui-disabled": {
+              backgroundColor: "#EAEAEA",
             },
             ...sx,
             ...(props.sxfieldinner as object),
@@ -68,7 +68,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
           FormHelperTextProps={{
             sx: {
               marginLeft: 0,
-              marginTop: '4px',
+              marginTop: "4px",
               fontSize: 11,
             },
           }}
@@ -84,18 +84,18 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
           error={error2}
           helperText={error2 && helperText2 ? helperText2 : helperText2}
           sx={{
-            margin: { xs: '16px 8px !important' },
-            '& .MuiOutlinedInput-root': {
+            margin: { xs: "16px 8px !important" },
+            "& .MuiOutlinedInput-root": {
               borderRadius: 0,
               height: 40,
               fontSize: 14,
             },
-            '& .MuiOutlinedInput-input': {
-              padding: '9.5px 8px !important',
+            "& .MuiOutlinedInput-input": {
+              padding: "9.5px 8px !important",
             },
 
-            '& .Mui-disabled': {
-              backgroundColor: '#EAEAEA',
+            "& .Mui-disabled": {
+              backgroundColor: "#EAEAEA",
             },
             ...sx,
             ...(props.sxfieldinner as object),
@@ -103,7 +103,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
           FormHelperTextProps={{
             sx: {
               marginLeft: 0,
-              marginTop: '4px',
+              marginTop: "4px",
               fontSize: 11,
             },
           }}
@@ -121,17 +121,17 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
           error={error}
           helperText={error ? errorMessage : props.helperText}
           sx={{
-            margin: { xs: '16px 8px !important' },
-            '& .MuiOutlinedInput-root': {
+            margin: { xs: "16px 8px !important" },
+            "& .MuiOutlinedInput-root": {
               borderRadius: 0,
               height: 40,
               fontSize: 14,
             },
-            '& .MuiOutlinedInput-input': {
-              padding: '9.5px 8px !important',
+            "& .MuiOutlinedInput-input": {
+              padding: "9.5px 8px !important",
             },
-            '& .Mui-disabled': {
-              backgroundColor: '#EAEAEA',
+            "& .Mui-disabled": {
+              backgroundColor: "#EAEAEA",
             },
             ...sx,
             ...(props.sxfieldinner as object),
@@ -139,7 +139,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
           FormHelperTextProps={{
             sx: {
               marginLeft: 0,
-              marginTop: '4px',
+              marginTop: "4px",
               fontSize: 11,
             },
           }}
@@ -148,7 +148,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
         <CustomButton
           color="primary"
           variant="outlined"
-          style={{ height: 40, padding: '9.5px 8px !important', minWidth: 120 }}
+          style={{ height: 40, padding: "9.5px 8px !important", minWidth: 120 }}
           onClick={onButtonClick}
           disabled={buttonDisabled}
           loading={buttonProps?.loading}
@@ -168,16 +168,16 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
       error={error}
       helperText={error ? errorMessage : props.helperText}
       sx={{
-        margin: { xs: '16px 8px !important' },
-        '& .MuiOutlinedInput-root': {
+        margin: { xs: "16px 8px !important" },
+        "& .MuiOutlinedInput-root": {
           borderRadius: 0,
           fontSize: 14,
         },
-        '& .MuiOutlinedInput-input': {
-          padding: '9.5px 8px !important',
+        "& .MuiOutlinedInput-input": {
+          padding: "9.5px 8px !important",
         },
-        '& .Mui-disabled': {
-          backgroundColor: '#EAEAEA',
+        "& .Mui-disabled": {
+          backgroundColor: "#EAEAEA",
         },
         ...sx,
         ...(props.sxfieldinner as object),
@@ -185,7 +185,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
       FormHelperTextProps={{
         sx: {
           marginLeft: 0,
-          marginTop: '4px',
+          marginTop: "4px",
           fontSize: 11,
         },
       }}

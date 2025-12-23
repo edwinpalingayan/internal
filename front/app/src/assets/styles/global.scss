@@ -1,13 +1,17 @@
-@use '@/assets/styles/fonts' as *;
+@use "@/assets/styles/fonts" as *;
 
 // 日本語 (Japanese)
 html,
 body {
-  font-family: 'Red Hat Display', 'Noto Sans JP', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-family:
+    "Red Hat Display", "Noto Sans JP", "Roboto", "Helvetica", "Arial",
+    sans-serif;
   // 必要に応じて日本語フォントにフォールバックします
 }
 
 body {
   // 日本語の場合はNoto Sans JP、ラテン文字の場合はRed Hat Displayを使用します
-  font-family: 'Red Hat Display', 'Noto Sans JP', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-family:
+    "Red Hat Display", "Noto Sans JP", "Roboto", "Helvetica", "Arial",
+    sans-serif;
 }

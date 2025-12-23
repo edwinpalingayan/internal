@@ -25,14 +25,15 @@ export const sortRows = (
   rows: Row[],
   sortLabelClick: number,
   sortCol: string,
-  sortDir: 'asc' | 'desc',
+  sortDir: "asc" | "desc",
 ): Row[] => {
   return rows.sort((current: Row, next: Row) => {
     if (sortLabelClick) {
-      const currentValue = current[sortCol] ?? '';
-      const nextValue = next[sortCol] ?? '';
-      const comp = currentValue > nextValue ? 1 : currentValue < nextValue ? -1 : 0;
-      return sortDir === 'asc' ? comp : -comp;
+      const currentValue = current[sortCol] ?? "";
+      const nextValue = next[sortCol] ?? "";
+      const comp =
+        currentValue > nextValue ? 1 : currentValue < nextValue ? -1 : 0;
+      return sortDir === "asc" ? comp : -comp;
     }
     return 0;
   });

@@ -27,6 +27,6 @@ export interface HostCampus {
 export interface ModuleTitle {
   KAMOKU_CD: string; // e.g., "I0275"
   KAMOKU_MEI: string; // e.g., "(MBA)マーケティング・経営戦略基礎"
-  DEFAULT_FLG: '0' | '1'; // Default flag (string type, but limited to "0" or "1")
+  DEFAULT_FLG: "0" | "1"; // Default flag (string type, but limited to "0" or "1")
   KAMOKU_HYOJI_JYUN: number; // 表示順（数値型）
 }

@@ -1,4 +1,4 @@
-import type { CourseTerm } from '@/types/SchoolTmClassSerchResponse';
+import type { CourseTerm } from "@/types/SchoolTmClassSerchResponse";
 
 export interface GetSchoolClassDetailsResponse {
   name: string;
@@ -40,9 +40,9 @@ export interface SchoolClassDetails extends CourseTerm {
 
 // 型安全のための全てのDAY系キーだよ
 export type DayKaisaiJikanKey =
-  | 'DAY1_KAISAI_JIKAN_KAISHI'
-  | 'DAY2_KAISAI_JIKAN_KAISHI'
-  | 'DAY3_KAISAI_JIKAN_KAISHI'
-  | 'DAY4_KAISAI_JIKAN_KAISHI'
-  | 'DAY5_KAISAI_JIKAN_KAISHI'
-  | 'DAY6_KAISAI_JIKAN_KAISHI';
+  | "DAY1_KAISAI_JIKAN_KAISHI"
+  | "DAY2_KAISAI_JIKAN_KAISHI"
+  | "DAY3_KAISAI_JIKAN_KAISHI"
+  | "DAY4_KAISAI_JIKAN_KAISHI"
+  | "DAY5_KAISAI_JIKAN_KAISHI"
+  | "DAY6_KAISAI_JIKAN_KAISHI";

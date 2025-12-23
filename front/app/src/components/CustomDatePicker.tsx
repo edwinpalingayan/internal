@@ -1,28 +1,28 @@
-import * as React from 'react';
-import dayjs, { Dayjs } from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
+import * as React from "react";
+import dayjs, { Dayjs } from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import DateRangeIcon from '@mui/icons-material/DateRange';
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import DateRangeIcon from "@mui/icons-material/DateRange";
 
-import 'dayjs/locale/ja';
+import "dayjs/locale/ja";
 
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ja } from 'date-fns/locale/ja';
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { ja } from "date-fns/locale/ja";
 
-import type { Day } from 'date-fns';
-import { colors } from '@mui/material';
+import type { Day } from "date-fns";
+import { colors } from "@mui/material";
 
 const customJa = {
   ...ja,
   options: { ...ja.options, weekStartsOn: 1 as Day }, // 0: Sunday, 1: Monday, etc.
 };
 
-dayjs.locale('ja');
+dayjs.locale("ja");
 dayjs.extend(utc);
 dayjs.extend(timezone);
-dayjs.tz.setDefault('Asia/Tokyo');
+dayjs.tz.setDefault("Asia/Tokyo");
 
 export type CustomDatePickerProps = {
   width?: string | number;
@@ -32,7 +32,7 @@ export type CustomDatePickerProps = {
 };
 
 export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
-  width = '100%',
+  width = "100%",
   value,
   setValue,
   onChange,
@@ -61,7 +61,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     <LocalizationProvider
       dateAdapter={AdapterDateFns}
       adapterLocale={customJa}
-      dateFormats={{ year: 'yyyy年' }}
+      dateFormats={{ year: "yyyy年" }}
     >
       <DatePicker
         label="開催日を選択してください"
@@ -74,19 +74,23 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
           textField: {
             helperText: null,
             InputLabelProps: {
-              sx: { color: '#C4C4C4' },
+              sx: { color: "#C4C4C4" },
             },
           },
-          calendarHeader: { format: 'yyyy年MM月' },
+          calendarHeader: { format: "yyyy年MM月" },
           field: { clearable: true, onClear: () => setCleared(true) },
           layout: {
             sx: {
-              '& .MuiDayCalendar-weekDayLabel:nth-of-type(6)': { color: colors.blue[900] },
-              '& .MuiDayCalendar-weekDayLabel:nth-of-type(7)': { color: colors.red[900] },
+              "& .MuiDayCalendar-weekDayLabel:nth-of-type(6)": {
+                color: colors.blue[900],
+              },
+              "& .MuiDayCalendar-weekDayLabel:nth-of-type(7)": {
+                color: colors.red[900],
+              },
             },
           },
           openPickerIcon: {
-            sx: { color: '#C4C4C4' },
+            sx: { color: "#C4C4C4" },
           },
         }}
       />

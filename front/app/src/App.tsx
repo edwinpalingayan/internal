@@ -1,38 +1,42 @@
-import { useEffect, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 
-import { URL_PREFIX } from '@/utils/config';
+import { URL_PREFIX } from "@/utils/config";
 
-import Root from '@/pages/Root';
+import Root from "@/pages/Root";
 
 // Common Pages
-import ErrorNotFound from '@/pages/error/ErrorNotFound';
-import Expired from '@/pages/Expired';
-import Thanks from '@/pages/Thanks';
+import ErrorNotFound from "@/pages/error/ErrorNotFound";
+import Expired from "@/pages/Expired";
+import Thanks from "@/pages/Thanks";
 
 // Admin and Event Pages
-import EventDateSelector from '@/pages/admin/EventDateSelector';
-import EventDetailPage from '@/pages/web/event/[EventDetailPage]';
+import EventDateSelector from "@/pages/admin/EventDateSelector";
+import EventDetailPage from "@/pages/web/event/[EventDetailPage]";
 
 function App() {
   const location = useLocation();
   const [pageTitle, setPageTitle] = useState(() =>
-    window.location.pathname.includes('/web/event/') ? 'イベント詳細' : 'イベント一覧',
+    window.location.pathname.includes("/web/event/")
+      ? "イベント詳細"
+      : "イベント一覧",
   );
 
   useEffect(() => {
     const path = location.pathname;
-    const title = path.includes('/web/event/') ? 'イベント詳細' : 'イベント一覧';
+    const title = path.includes("/web/event/")
+      ? "イベント詳細"
+      : "イベント一覧";
     setPageTitle(title);
     document.title = `${title} - Globis University JP`;
   }, [location.pathname]);
 
-  const showAdminHeader = ['/eventlist', '/web/event/'].some((path) =>
+  const showAdminHeader = ["/eventlist", "/web/event/"].some((path) =>
     location.pathname.includes(path),
   );
 
   return (
-    <div style={{ overflowX: 'hidden' }}>
+    <div style={{ overflowX: "hidden" }}>
       {showAdminHeader ? (
         <div className="adminHeader">
           <div className="adminHeaderContainer">
@@ -47,7 +51,11 @@ function App() {
           </div>
         </div>
       ) : (
-        <img src="/images/universityLogoJp.png" alt="Globis University JP" className="mainLogo" />
+        <img
+          src="/images/universityLogoJp.png"
+          alt="Globis University JP"
+          className="mainLogo"
+        />
       )}
       <Routes>
         {/* Routes with URL_PREFIX */}
@@ -56,10 +64,16 @@ function App() {
         <Route path={`${URL_PREFIX}/`} element={<Root />} />
         <Route path={`${URL_PREFIX}/web/thanks`} element={<Thanks />} />
         <Route path={`${URL_PREFIX}/web/expired`} element={<Expired />} />
-        <Route path={`${URL_PREFIX}/web/not-found`} element={<ErrorNotFound />} />
+        <Route
+          path={`${URL_PREFIX}/web/not-found`}
+          element={<ErrorNotFound />}
+        />
 
         {/* Admin and Event Pages */}
-        <Route path={`${URL_PREFIX}/eventlist`} element={<EventDateSelector />} />
+        <Route
+          path={`${URL_PREFIX}/eventlist`}
+          element={<EventDateSelector />}
+        />
         <Route path="/web/event/:eventId" element={<EventDetailPage />} />
 
         {/* Routes without URL_PREFIX */}
