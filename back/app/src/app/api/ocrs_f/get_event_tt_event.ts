@@ -49,7 +49,7 @@ const allowedParam: (keyof ReqParam)[] = [
   "event_id",
 ];
 
-export async function get_event_tt_event_list(req: Request): Promise<ExecResults> {
+export async function get_event_tt_event(req: Request): Promise<ExecResults> {
   const reqParam: ReqParam =  req.body;
   let result;
 
@@ -80,5 +80,5 @@ export async function get_event_tt_event_list(req: Request): Promise<ExecResults
   });
 
   // SQL実行
-  return await sqlExecutor(get_event_tt_event_list.name, sqlStr, sqlPrm) as ExecResults;
+  return await sqlExecutor(get_event_tt_event.name, sqlStr, sqlPrm) as ExecResults;
 }

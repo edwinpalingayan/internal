@@ -3,11 +3,12 @@
 //------------------------------------------------------------------------------
 // 変更履歴
 // 2025-04-17 H.Miyashita 新規作成
+// 2025-12-02 iwamura ストアドの実行を追加
 //==============================================================================
 "use strict";
-import { execQuery,execQueries } from "./database";
+import { execQuery,execQueries, execStoredProcedure } from "./database";
 import { LOGGER }                from "./log";
-import { SqlParam, ExecResults } from "./types";
+import { SqlParam, ExecResults, StoredProcParam, SPExecResults } from "./types";
 import { RES_STS }               from "./const";
 
 // SQL実行結果を処理
@@ -34,4 +35,23 @@ export async function sqlTrnExecutor(name: string, queries: { sql: string, prm: 
   const rowCount    = resultsArray[0][0];
   const resultArray = resultsArray[0][1];
   return handleSqlResult(name, sqlReturnCode, rowCount, resultArray);
+}
+
+// ストアド実行結果を処理
+async function handleSPResult(name: string, spReturnCode: number, rowCount: number, resultArray: {[key: string]: any;}[], outputArray:{[key: string]: any;}): Promise<SPExecResults> {
+  if (spReturnCode){
+    LOGGER.error(`Error Message : ${resultArray[0].message_code} ${resultArray[0].message} ${resultArray[0].message_detail}`);
+    LOGGER.debug(`Error Data    : ${JSON.stringify(resultArray)}`);  // debug
+    return [RES_STS.INTERNAL_SERVER_ERROR, "error", 1, resultArray, outputArray];
+  }
+  LOGGER.info (`Rows Returned : ${rowCount}`);
+  LOGGER.debug(`Response Data : ${JSON.stringify(resultArray)}`);
+  LOGGER.debug(`Output Parameters : ${JSON.stringify(outputArray)}`);
+  return [RES_STS.OK, name, rowCount, resultArray, outputArray];
+}
+
+// ストアドを実行
+export async function spExecutor(name: string, spName: string, spPrm: StoredProcParam[]): Promise<SPExecResults> {
+  const spResult = await execStoredProcedure(spName,spPrm);
+  return handleSPResult(name, spResult.procResultCode, spResult.rowsCount, spResult.recordset,spResult.outputParameters);
 }
